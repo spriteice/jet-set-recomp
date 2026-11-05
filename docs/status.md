@@ -52,25 +52,67 @@ past the TIME OVER screen.
 
 ## What's open
 
-In order. `release-prep/roadmap.md` in the shared folder has the milestones.
+Six phases, in order, adopted by the maintainer on 5 November (`docs/decisions.md`). A phase ends only
+when its exit is shown, with numbers. Work that changes no code, such as a device smoke test, can run
+alongside. The reasons, from how other recompilation projects ordered their work, are in
+`reviews/recomp-work-order-2026-11-05.md` in the shared folder, and `release-prep/roadmap.md` there
+puts each milestone in its phase.
 
-1. **Modifier volumes (shadows),** next, before other bugs: a stencil pass in dream-recomp's Vulkan
-   renderer, with its own unit test. The game uses them in every 3D frame (39 opaque and 1 translucent
-   in the last frame of w1).
-2. **Untranslated calls from play** (`known-bugs.md`, 11): the cause is in the translator, not the
-   config, so don't seed these in `jgr.toml`. Discovery's pointer pass rejects functions with more
-   than 200 instructions before their first exit, and switch recovery drops a bounded table when a
-   case lies past a fragment's end (`bug-11/diagnosis.md` in the shared folder). Three dream-recomp
-   fixes with tests are in progress; then a pin move here, with the gate and the two 10-minute runs.
-3. **SteamOS.** Nothing has run on the Ally X yet; the package in `builds/` is the first to try. The
-   next Linux build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to see
-   that its error dialog shows.
-4. **Renderer bugs** (`known-bugs.md`, 5 to 8): each needs its own test, because the gate doesn't see
-   drawing.
-5. **Playing a stage:** a 5-minute play-through the maintainer records with `--record-input` on a
-   future build, added to the gate as a third scenario and to `data/baseline.json`.
-6. **Rebuild cost:** each config change re-emits 81 MB of C++ in one unit and takes about 15 minutes.
-7. **OpenGL 3.3 core,** later, as its own milestone.
+1. **Map the code (now):** a full coverage pass, before any renderer work.
+   - Entry: bug 11's three dream-recomp fixes (`known-bugs.md`, 11) rechecked, committed and pinned.
+   - Work: a coverage report from the translator over the whole image, with every byte classed as
+     function code, data or literal pool, switch table, padding, or unknown (the baseline leaves
+     230,602 of 1,447,388 bytes undecoded), and every indirect jump and call site (`jmp`, `braf`,
+     `jsr @Rn`, `bsrf`) classed as a recovered switch, a tail call or a resolved call. Discovery's
+     200-instruction window fixed in the translator, with a test. Config seeds only where measured.
+     The run log's own bugs fixed first, because the pass measures with it (`known-bugs.md`, 12 and
+     15). The maintainer records at least two play-throughs with `--record-input` (the tutorial and the
+     first stage, 5 minutes or more), added to the gate as its third scenario and to
+     `data/baseline.json`.
+   - Exit: every unknown range explained or translated, and listed with its size; no indirect jump
+     site unclassified; both recorded runs show 0 untranslated calls, 0 traps and 0 unmapped
+     accesses; the gate and both 10-minute runs match `data/baseline.json`, or the maintainer
+     approves the new counts.
+   - If the pass needs more than about ten re-emits, splitting the generated unit (phase 6) moves
+     here. It's a restructure with no change in behaviour, shown by an identical gate.
+2. **Tell translation faults from renderer faults.**
+   - Entry: phase 1's exit, and recorded runs that reach each drawing bug's spot: the Shibuya
+     Terminal road, the Garage, a grind, and sparks.
+   - Work: replay each recorded run translated and with `--interpret`, and compare the per-frame write
+     hashes and the TA capture at each bug's spot. A match puts the bug in the renderer. A difference
+     puts it in translation, and it goes back to phase 1 with a test.
+   - Exit: every recorded run's write hashes match the interpreted run's, or each difference is
+     explained; bugs 5, 7, 8 and 9 each say "translation" or "renderer" in `known-bugs.md`.
+   - Not measured yet: how long `--interpret` takes over a 5-minute recorded run.
+3. **Runtime and platforms.**
+   - Entry: phase 1's exit. The first SteamOS smoke test can run any time, since it changes no code.
+     The next Linux build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to
+     see that its error dialog shows.
+   - Work: pacing while unfocused (`known-bugs.md`, 10), and the sparks (9) if phase 2 puts them in
+     game timing. SteamOS in Desktop Mode and Game Mode. Sound through a device, a controller, and a
+     30-minute session.
+   - Exit: bug 10 fixed with a test; a recorded run replays on the Ally X in Game Mode with 0 faults;
+     presented frames per second logged with the window focused and unfocused.
+4. **The renderer, one hardware feature at a time.** Each fix gets a unit test on a synthetic TA list
+   that fails without it, because the gate doesn't see drawing, and a device step at the spot.
+   - Entry: phase 2 has put the bug in the renderer, and phase 3 has fixed pacing.
+   - Order: depth for the translucent list first (`known-bugs.md`, 6; the paused fix and its tests are
+     in the shared folder's `depth-fix/`, to re-test on phase 1's function boundaries). Then modifier
+     volumes (shadows, 1), because their stencil pass reads the depth that bug 6's fix changes; the
+     game uses them in every 3D frame (39 opaque and 1 translucent in the last frame of w1). Then
+     texture formats and palettes (7, 8), the texture cache (5), and the sparks (9) if they're the
+     renderer's.
+   - Exit: bugs 1 and 5 to 9 fixed and passed on both devices, each with a pixel count on a capture
+     (the method in `depth-fix/diagnosis.md`).
+5. **The whole game.**
+   - Entry: phases 1 to 4.
+   - Work: every stage played on both devices and recorded, each recording added to the gate. A new
+     untranslated call goes back to phase 1, and a new drawing bug to phase 2.
+   - Exit: every stage with 0 faults and 0 untranslated calls; then releases drop the interpreter
+     fallback (`docs/decisions.md`); full speed with headroom measured on the Ally X in Game Mode.
+6. **Speed, OpenGL and release.** Rebuild cost, unless phase 1 took it: each config change re-emits
+   81 MB of C++ in one unit and takes about 15 minutes. OpenGL 3.3 core, as its own milestone. The
+   release checklist (`docs/release-checklist.md`). Any enhancements the maintainer wants come last.
 
 ## Things that bite
 
