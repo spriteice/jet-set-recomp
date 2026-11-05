@@ -24,9 +24,20 @@ devkitPro's MSYS2 git comes first on PATH.
 
 ## The disc in a sandbox
 
-Unit tests and repo builds don't need it; only boot runs do. Track 3 is over the 400 MB copy limit, so:
-split it into parts on the PC, copy them, rejoin them, and run `scripts/00_verify_inputs.sh`. Deleting
-the parts from the PC needs my permission. Everything from the disc stays in that sandbox.
+Unit tests and CI don't need it. Builds do (the translator reads `1ST_READ.BIN`), and so do boot runs.
+Track 3 is over the 400 MB copy limit, so, through Remote Control on the PC, in Git Bash, split it in a
+scratch folder outside `Game Files\` (`split -b 300M -d "Track 3.bin" track3.part.`), copy the parts,
+rejoin them in the sandbox (`cat track3.part.* > "Track 3.bin"`), and run
+`scripts/00_verify_inputs.sh`. Delete the parts from the PC afterwards (approved, `docs/decisions.md`),
+and never touch the disc files themselves. Everything from the disc stays in that sandbox.
+
+## Trying an unpushed dream-recomp change
+
+`third_party/dream-recomp` is read-only, and `01_fetch_dream_recomp.sh` refuses it with local changes.
+To build the game on a dream-recomp change before it's pushed, commit it in your own dream-recomp clone,
+then build with `DREAM_RECOMP_URL=/path/to/that/clone` and its commit's full hash in
+`data/dream-recomp.pin`. That pin edit is local only: it's committed here only after the dream-recomp
+commit is pushed, as the pin move. A report on such a build names the dream-recomp commit it ran on.
 
 ## Building
 
@@ -85,15 +96,16 @@ gate and the baseline cover the attract loop and the first 40 s of gameplay only
 when the change reaches further.
 
 A changed hash is a fact, and whether it matters is a judgement: explain it in the report. Captures are
-keyed to one disc and build, so they aren't comparable across machines.
+keyed to one disc, build and platform: compare only captures made the same way, which is what the
+manifest below records. A Windows or Wine capture is never compared with a Linux one.
 
 Captures and write hashes outlive a sandbox in the shared folder's `captures/<commit>-<pin>/`, where
 `<commit>` is this repo's commit and `<pin>` the first 7 digits of the pin. They hold hashes and counts
 only, never screenshots, logs with instruction text or anything else from section 3's list. Each
 folder has a `MANIFEST.txt`: the commit, the full pin, the SHA-256 of every file in `scripts/`, the
-date, and the commands run. Before building the before-build for a gate run, look there for its
-captures. Reuse them only when the manifest matches exactly and they were made on a Linux sandbox, and
-say in the report which you reused.
+`clang --version` line, the date, and the commands run. Before building the before-build for a gate
+run, look there for its captures. Reuse them only when the manifest matches exactly and they were made
+on a Linux sandbox, and say in the report which you reused.
 
 ## The two 10-minute runs
 

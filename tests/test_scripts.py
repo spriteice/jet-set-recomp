@@ -245,5 +245,39 @@ class GitSetup(unittest.TestCase):
         self.assertEqual(self.config("gpg.ssh.program"), "ssh-keygen")
 
 
+class FetchDreamRecomp(unittest.TestCase):
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        self.root = self.folder / "repo"
+        shutil.copytree(ROOT / "scripts", self.root / "scripts")
+        (self.root / "data").mkdir()
+
+    def upstream(self, name: str) -> tuple[pathlib.Path, str]:
+        """A stand-in dream-recomp with one commit, and that commit's hash."""
+        repo = self.folder / name
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com")
+        subprocess.run(["git", "-C", str(repo), "commit", "-q", "--allow-empty", "--no-gpg-sign", "-m", name],
+                       check=True, env=env)
+        head = subprocess.run(["git", "-C", str(repo), "rev-parse", "HEAD"], check=True,
+                              capture_output=True, text=True).stdout.strip()
+        return repo, head
+
+    def fetch(self, url: pathlib.Path, pin: str):
+        (self.root / "data/dream-recomp.pin").write_text(pin + "\n")
+        return subprocess.run(["bash", str(self.root / "scripts/01_fetch_dream_recomp.sh")],
+                              capture_output=True, text=True, env=dict(os.environ, DREAM_RECOMP_URL=str(url)))
+
+    def test_a_later_url_is_followed_after_the_first_fetch(self):
+        first, first_head = self.upstream("first")
+        self.assertEqual(self.fetch(first, first_head).returncode, 0)
+        second, second_head = self.upstream("second")
+        result = self.fetch(second, second_head)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn(second_head, result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

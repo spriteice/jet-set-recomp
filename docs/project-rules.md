@@ -162,8 +162,9 @@ may be away for hours, so don't leave the whole thread idle for one question.
 
 `docs/project-instructions.md`, section 5 is the rule. It also stops for: a check or step that still
 fails after two fixes, a failure it can't explain or didn't cause, anything newly installed beyond
-section 4's list, a second fix in one place, and whether a bug is critical. Other bugs it finds go in
-`known-bugs.md` and are told to me, and aren't fixed in that thread.
+section 4's list, a second fix in one place, a fix that changes the model ("Where code goes" 1), the
+first hook, and whether a bug is critical. Other bugs it finds go in `known-bugs.md` and are told to
+me, and aren't fixed in that thread.
 
 ## Platforms
 

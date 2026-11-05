@@ -21,6 +21,8 @@ if [ ! -e "$dest/.git" ]; then
     git -C "$dest" init -q
     git -C "$dest" remote add origin "$url"
 fi
+# Follow DREAM_RECOMP_URL every time, so a local clone can stand in for an unpushed change.
+git -C "$dest" remote set-url origin "$url"
 
 if [ -n "$(git -C "$dest" status --porcelain)" ]; then
     echo "$dest has local changes. Translator and runtime fixes go on spriteice/dream-recomp's main." >&2
