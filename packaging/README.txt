@@ -18,6 +18,16 @@ disc's .cue:
 It writes disc.gdi and boot/1ST_READ.BIN here, and checks the boot file against the hash list. If the
 disc moves, run it again.
 
+Copying the disc into this folder (Linux)
+-----------------------------------------
+When the disc arrives on a USB stick, as on a handheld, run copy-disc.sh once instead of setup.sh:
+
+  ./copy-disc.sh "USB_STICK/Jet Grind Radio (USA)/Jet Grind Radio (USA).cue"
+
+It copies the .cue and the tracks (1.2 GB) into disc/, checks every copy against the hash list, and
+sets up with paths inside this folder. The folder is then complete: it can move, and the stick can
+go. (Setup writes paths inside the folder too whenever the disc is already under it.)
+
 Playing
 -------
 Run play.bat on Windows or play.sh on Linux. Until setup has run, they say what's missing and

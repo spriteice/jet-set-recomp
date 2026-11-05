@@ -2,6 +2,7 @@
 
     python3 -m unittest discover -s tests
 """
+import hashlib
 import importlib.util
 import os
 import pathlib
@@ -54,6 +55,26 @@ class MakeGdi(unittest.TestCase):
     def test_a_cue_with_no_tracks_is_refused(self):
         with self.assertRaises(ValueError):
             make_gdi.parse_cue("REM nothing here\n")
+
+    def test_a_disc_under_the_gdis_folder_gets_relative_paths(self):
+        folder = pathlib.Path("/g")
+        self.assertEqual(make_gdi.track_folder(folder / "disc", folder), "disc/")
+        self.assertEqual(make_gdi.track_folder(folder, folder), "")
+        self.assertEqual(make_gdi.track_folder(pathlib.Path("/media/stick/jgr"), folder), "/media/stick/jgr/")
+
+    def test_the_written_gdi_names_tracks_relative_to_itself(self):
+        with tempfile.TemporaryDirectory() as folder:
+            disc = pathlib.Path(folder, "disc")
+            disc.mkdir()
+            (disc / "game.cue").write_text(CUE)
+            for name, size in SIZES.items():
+                (disc / name).write_bytes(b"\0" * size)
+            result = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/02_make_gdi.py"),
+                                     f"{folder}/disc/game.cue", f"{folder}/disc.gdi"], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            lines = pathlib.Path(folder, "disc.gdi").read_text().splitlines()
+        self.assertEqual(lines[1], '1 0 4 2352 "disc/t1.bin" 0')
+        self.assertNotIn(folder, lines[3])
 
 
 class Audit(unittest.TestCase):
@@ -132,14 +153,14 @@ class Package(unittest.TestCase):
                        check=True, capture_output=True, env=env)
 
     def test_the_package_holds_what_its_launchers_use(self):
-        for name in ("jgr_boot", "jgr.toml", "play.sh", "setup.sh", "README.txt",
+        for name in ("jgr_boot", "jgr.toml", "play.sh", "setup.sh", "copy-disc.sh", "README.txt",
                      "tools/02_make_gdi.py", "tools/03_get_boot_file.py", "tools/inputs.sha256",
                      "tools/dcdisc/__init__.py", "licences/LICENSE-jet-set-recomp.txt",
                      "licences/LICENSE-dream-recomp.txt"):
             self.assertTrue((self.out / name).exists(), name)
 
     def test_the_package_holds_nothing_from_the_disc(self):
-        for name in ("disc.gdi", "boot"):
+        for name in ("disc.gdi", "boot", "disc"):
             self.assertFalse((self.out / name).exists(), name)
 
     def play(self):
@@ -161,6 +182,74 @@ class Package(unittest.TestCase):
         args = (self.out / "ran.txt").read_text()
         self.assertRegex(args, r"--report logs/run-\d{4}-\d\d-\d\d_\d\d-\d\d-\d\d\.txt")
         self.assertTrue((self.out / "logs").is_dir())
+
+
+class CopyDisc(unittest.TestCase):
+    """copy-disc.sh puts the player's disc inside the package, so the folder is complete and can move."""
+
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        root = fake_checkout(self.folder)
+        self.out = self.folder / "package"
+        env = dict(os.environ, DREAM_LINUX_PREFIX=str(self.folder / "prefix"))
+        subprocess.run(["bash", str(root / "scripts/20_package.sh"), "linux", str(self.out)],
+                       check=True, capture_output=True, env=env)
+        # A made-up disc on a stick, and a hash list that names it, since the real list names the real disc.
+        self.stick = self.folder / "stick/Jet Grind Radio (USA)"
+        self.stick.mkdir(parents=True)
+        self.cue = self.stick / "game.cue"
+        self.cue.write_text(CUE)
+        lines = ["# made up for the test", f"{hashlib.sha256(CUE.encode()).hexdigest()}  game.cue"]
+        for name, size in SIZES.items():
+            data = name.encode() * (size // len(name))
+            (self.stick / name).write_bytes(data)
+            lines.append(f"{hashlib.sha256(data).hexdigest()}  {name}")
+        lines.append(f"{'0' * 64}  1ST_READ.BIN")
+        (self.out / "tools/inputs.sha256").write_text("\n".join(lines) + "\n")
+        # The boot-file tool reads a real disc image; this stand-in records the .gdi it was given.
+        (self.out / "tools/03_get_boot_file.py").write_text(
+            "import pathlib, sys\n"
+            "out = pathlib.Path(sys.argv[2])\n"
+            "out.parent.mkdir(exist_ok=True)\n"
+            "out.write_text(sys.argv[1])\n")
+
+    def copy(self, cue: str):
+        return subprocess.run(["sh", str(self.out / "copy-disc.sh"), cue], capture_output=True, text=True)
+
+    def test_the_disc_is_copied_in_and_the_gdi_points_inside_the_folder(self):
+        result = self.copy(str(self.cue))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for name in ("game.cue", "t1.bin", "t2.bin", "t3.bin"):
+            self.assertEqual((self.out / "disc" / name).read_bytes(), (self.stick / name).read_bytes(), name)
+        gdi = (self.out / "disc.gdi").read_text()
+        self.assertIn('"disc/t1.bin"', gdi)
+        self.assertNotIn(str(self.stick), gdi)
+        self.assertEqual((self.out / "boot/1ST_READ.BIN").read_text(), "disc.gdi")
+        self.assertIn("Run ./play.sh", result.stdout)
+
+    def test_a_different_disc_is_refused_and_its_copies_removed(self):
+        (self.stick / "t2.bin").write_bytes(b"x" * SIZES["t2.bin"])
+        result = self.copy(str(self.cue))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("t2.bin", result.stdout + result.stderr)
+        self.assertIn("MK-51058 V1.005", result.stderr)
+        self.assertFalse((self.out / "disc.gdi").exists())
+        self.assertFalse((self.out / "boot").exists())
+        self.assertEqual(sorted(path.name for path in (self.out / "disc").iterdir()), [])
+
+    def test_a_missing_track_is_named_before_anything_is_checked(self):
+        (self.stick / "t3.bin").unlink()
+        result = self.copy(str(self.cue))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("t3.bin", result.stderr)
+        self.assertFalse((self.out / "disc.gdi").exists())
+
+    def test_a_missing_cue_is_named(self):
+        result = self.copy(str(self.stick / "none.cue"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("No .cue at", result.stderr)
+        self.assertFalse((self.out / "disc").exists())
 
 
 class PackageRefusals(unittest.TestCase):

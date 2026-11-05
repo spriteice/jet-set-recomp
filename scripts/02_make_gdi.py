@@ -7,6 +7,9 @@ dcdisc reads .gdi, .chd and .cdi, not .cue. Each track line of a .gdi is: number
 (4 for data, 0 for audio), sector size, file, and the byte offset of its first sector in that file.
 An audio track's pregap sits at the start of its .bin in a Redump-style dump, so the offset skips it
 and the LBA is where its INDEX 01 falls. The high-density area always starts at LBA 45000.
+
+Track paths are written relative to the .gdi when the disc is under its folder, so a folder that
+holds its disc can move; otherwise they're absolute.
 """
 from __future__ import annotations
 
@@ -62,6 +65,16 @@ def make_gdi(tracks: list[dict], size_of, folder: str = "") -> str:
     return "\n".join(lines) + "\n"
 
 
+def track_folder(disc: pathlib.Path, gdi_folder: pathlib.Path) -> str:
+    """The prefix for the track names in the .gdi, both paths resolved: relative to the .gdi when the
+    disc is under its folder, otherwise absolute."""
+    if disc == gdi_folder:
+        return ""
+    if disc.is_relative_to(gdi_folder):
+        return disc.relative_to(gdi_folder).as_posix() + "/"
+    return disc.as_posix() + "/"
+
+
 def main() -> int:
     if len(sys.argv) != 3:
         print(__doc__.strip())
@@ -73,7 +86,8 @@ def main() -> int:
         return 1
     try:
         tracks = parse_cue(cue.read_text())
-        gdi = make_gdi(tracks, lambda name: (cue.parent / name).stat().st_size, cue.parent.as_posix() + "/")
+        folder = track_folder(cue.parent, out.resolve().parent)
+        gdi = make_gdi(tracks, lambda name: (cue.parent / name).stat().st_size, folder)
     except FileNotFoundError as missing:
         print(f"The .cue names a track that isn't beside it: {missing.filename}. Keep the .cue and its "
               ".bin files together, as they were dumped.", file=sys.stderr)

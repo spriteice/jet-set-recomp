@@ -44,6 +44,9 @@ JSR-PC project.
 | Both repos' history is re-made as Claude, signed: every commit of this repo, and our four on dream-recomp, not phobos665's; old hashes are mapped in `docs/commit-map.md` | Claude proposed; Maintainer (card) | 5 Nov 11:26 |
 | Every choice, approval or decision for the maintainer goes on a card, never only in plain text | Maintainer | 5 Nov 10:22 |
 | Every test build has the files it needs to play out of the box: setup already run for the maintainer's disc before it's handed over | Maintainer | 5 Nov 12:13 |
+| A ready-to-play Ally X build is made on the PC, where the disc is, with the disc's tracks inside, and the maintainer copies it to the Ally X | Claude proposed; Maintainer (card) | 5 Nov 12:23 |
+| The save bundled in a test build is the one furthest through the game, not the newest | Maintainer | 5 Nov 12:24 |
+| The Ally X build carries everything but the game files, which are too large: it's delivered with the save, the maintainer copies the game files to the Ally X themselves, and the package supplies a script that puts them in place. This replaces the PC-made archive of 12:23 | Maintainer | 5 Nov 13:34 |
 | Our dream-recomp commits write an ADR in its `docs/decisions/` for a decision that changes a model, and skip its `WP x.y` references | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
 | The two `--vmu` baseline runs are made on the PC's Windows build; their Linux sandbox speed is recorded at the next pin move | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
 | If Ubuntu's snapshot server is ever needed, its packages are pushed to our GitHub first, and every local build, sandbox and GitHub CI installs only from there; the server is used only to update the copy | Maintainer | 5 Nov 11:55 to 11:56 |

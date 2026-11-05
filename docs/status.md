@@ -23,7 +23,11 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   shared folder lists them.
 - **SteamOS hasn't run anything yet.** Four Linux packages are in the shared folder's `builds/`: the
   current one is `2026-11-05-de56e83-linux`, and the two `depthfix-test` ones carry an unpushed
-  dream-recomp change.
+  dream-recomp change. None has `copy-disc.sh` yet: the next Linux package is the first with it, and
+  it goes to the Ally X with the maintainer's save, without the game files, which the maintainer
+  copies and puts in place with that script (`docs/build-and-test-reference.md`, Delivery). The 1.2 GB
+  `Building\2026-11-05-de56e83-linux-ready.tar` on the PC, made with the disc inside before the rule
+  changed, isn't the route any more.
 
 The two tables and notes below are the first Windows check, made on build 1 before this repo existed.
 

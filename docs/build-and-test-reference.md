@@ -146,18 +146,27 @@ only a device step there shows the real bar.
 
 ## Delivery
 
-One folder per build, named `<date>-<commit>-pin-<pin>-<topic>`, where `<pin>` is the first 7 digits of
-the dream-recomp commit it was built on, so a build on an unpushed dream-recomp change says which. It's
-made new with `scripts/20_package.sh`, which refuses a folder that isn't empty, and holds no disc file
-and no boot file; setup makes those from the disc.
+One folder per build, named `<date>-<commit>-pin-<pin>-<topic>`, where `<pin>` is the first 7 digits
+of the dream-recomp commit it was built on, so a build on an unpushed dream-recomp change says
+which. It's made new with `scripts/20_package.sh`, which refuses a folder that isn't empty. The
+package as the sandbox makes it holds no disc file and no boot file, because nothing from the disc
+leaves the sandbox; `setup.sh` or `setup.bat` makes those from the disc, and `copy-disc.sh` copies
+the disc in first.
 
-A test build plays out of the box (the maintainer, 5 Nov): what the maintainer receives has had setup
-run for their own disc, with their memory card carried over, so `play.bat` or `play.sh` is the first
-and only step. On the PC that happens in `Building\` through Remote Control; how a ready folder
-reaches the Ally X is still being worked out.
+A test build plays out of the box (the maintainer, 5 Nov): what the maintainer receives carries
+their save, `vmu-a1.bin`, the one furthest through the game, never an empty card, and needs no setup
+beyond their game files. The save lives on the PC, so the build is packed with it there through
+Remote Control, or the save is copied from the PC into the sandbox that packs it. On the PC, the
+Windows folder in `Building\` is set up in place, with the disc where it is, so `play.bat` is the
+only step. The Ally X build carries everything but the game files, which are too large to ship: the
+maintainer copies the disc to the Ally X themselves and runs the package's `copy-disc.sh` once, in
+Desktop Mode, naming the `.cue`; it copies the tracks into `disc/`, checks them against the hash
+list, and writes `disc.gdi` with paths inside the folder, so the folder is complete and `play.sh`
+can be added to Steam. The build's `TESTING.md` gives the steps.
 Its launchers write a run log for every run, `logs/run-<start time>.txt`, and never overwrite one.
 
-- **Linux:** attached in the thread as a file, for the Ally X. I send its run logs back the same way.
+- **Linux:** attached in the thread as a file, for the Ally X, or copied from the PC with the game
+  files. I send its run logs back in the thread.
 - **Windows:** stays on my PC in `Building\`, and you read its run logs there. If it's cross-built in
   the cloud, it's copied over once the PC is free.
 - **Never published,** in any form, and no build goes to anyone else.
@@ -165,7 +174,8 @@ Its launchers write a run log for every run, `logs/run-<start time>.txt`, and ne
 Before a build is delivered, test the package as delivered, not only the program:
 
 1. Unpack a copy into an empty folder and run its own `setup.sh` (or `setup.bat`) with the disc's
-   `.cue`. Setup writes disc files, so a Linux package is sent from the untouched original.
+   `.cue`. Setup writes disc files, so a Linux package is sent from the untouched original. A Linux
+   package's `copy-disc.sh` is covered by the unit tests with a made-up disc, and by the Ally X steps.
 2. From that folder, run the program headless for 10 s with the launcher's files:
    `./jgr_boot --config jgr.toml --vmu vmu-a1.bin --max-seconds 10 --report logs/smoke.txt`
    (`jgr_boot.exe` on Windows).
@@ -177,11 +187,14 @@ Step 2 runs the program itself, not `play.sh` or `play.bat`, which force `--wind
 covered by the unit tests, with a stand-in program, and by the device steps, so a sandbox report
 doesn't call them tested end to end.
 
-On the Ally X, setup runs in Desktop Mode, from a terminal (Konsole). Game Mode has no terminal: there,
-the game starts from `play.sh`, added to Steam as a non-Steam game. `TESTING.md` steps say which mode.
+On the Ally X, `copy-disc.sh` (or setup) runs in Desktop Mode, from a terminal (Konsole). Game Mode has
+no terminal: there, the game starts from `play.sh`, added to Steam as a non-Steam game. `TESTING.md`
+steps say which mode.
 
 Linux is checked this way in the sandbox. Windows is checked the same way on the PC through Remote
-Control, with `setup.bat`, before I test. A package that fails any step isn't delivered.
+Control, with `setup.bat`, before I test. A build packed with the save is checked after packing: the
+save's SHA-256 against its source, and the archive's listing (the package's modes and symlinks
+kept). A package that fails any step isn't delivered.
 
 Check each package's SHA-256 after every copy. With each build, write `TESTING.md`:
 

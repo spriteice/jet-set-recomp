@@ -29,7 +29,7 @@ case "$platform" in
     linux)
         cp "$program" "$out/"
         cp -P "${DREAM_LINUX_PREFIX:-$HOME/linux/prefix}"/lib/libSDL3.so* "$out/"
-        cp "$root/packaging/play.sh" "$root/packaging/setup.sh" "$out/"
+        cp "$root/packaging/play.sh" "$root/packaging/setup.sh" "$root/packaging/copy-disc.sh" "$out/"
         ;;
     windows)
         cp "$program" "$out/"
