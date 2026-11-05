@@ -6,7 +6,8 @@ if not exist boot\1ST_READ.BIN goto :nosetup
 rem Each run keeps its own log in logs\, named by its start time. None is overwritten.
 if not exist logs mkdir logs
 for /f %%t in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss"') do set "JGR_RUN=%%t"
-jgr_boot.exe --config jgr.toml --window --vmu vmu-a1.bin --report "logs\run-%JGR_RUN%.txt" %*
+rem By full path: an account with NoDefaultCurrentDirectoryInExePath set doesn't look in this folder.
+"%~dp0jgr_boot.exe" --config jgr.toml --window --vmu vmu-a1.bin --report "logs\run-%JGR_RUN%.txt" %*
 if not "%errorlevel%"=="0" (
     echo jgr_boot exited with code %errorlevel%. Send back logs\run-%JGR_RUN%.txt if it exists.
     pause
