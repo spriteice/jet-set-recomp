@@ -49,9 +49,11 @@ Decide this first.
 7. **Hooks.** Replacing or hooking one game function is right only when that function's own logic is
    the root cause. Each is deliberate, named for what it does, and uses named constants. Its comment
    says what's wrong in the game's function, and why the translator and runtime aren't the cause. If
-   many functions misbehave for one reason, fix the translator or runtime instead.
+   many functions misbehave for one reason, fix the translator or runtime instead. The repo has no
+   hook mechanism yet: the first hook starts as a design proposal for my yes, before any hook code.
 8. **A second fix in one place is a review.** Before proposing a fix, read the code's history
-   (`git log -L`). If it already had a fix for a related bug, propose a review of the mechanism first.
+   (`git log -L`) with full history fetched first (`git fetch --unshallow`, in both repos): a cloud
+   clone is shallow, and a shallow log shows no earlier fix whether there was one or not. If it already had a fix for a related bug, propose a review of the mechanism first.
 
 ## How it's written
 

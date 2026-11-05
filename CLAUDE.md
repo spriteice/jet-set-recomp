@@ -16,6 +16,14 @@ If these disagree, stop and tell the maintainer. Don't pick one. If you can't re
 Code is built by three principles, in priority order: functional, robust, performant
 (`docs/project-rules.md`, "How it's written").
 
+Right after cloning either repo:
+
+```sh
+git config user.name spriteice
+git config user.email 62098029+spriteice@users.noreply.github.com
+git fetch --unshallow   # history is part of the rules (docs/project-rules.md, "Where code goes" 8)
+```
+
 The ones most easily broken:
 
 - Nothing from the disc, or made from it, goes in a repo or a message. `python3 scripts/audit_repo.py . --commits HEAD`

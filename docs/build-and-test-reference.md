@@ -89,9 +89,11 @@ keyed to one disc and build, so they aren't comparable across machines.
 
 Captures and write hashes outlive a sandbox in the shared folder's `captures/<commit>-<pin>/`, where
 `<commit>` is this repo's commit and `<pin>` the first 7 digits of the pin. They hold hashes and counts
-only, never screenshots, logs with instruction text or anything else from section 3's list. Before
-building the before-build for a gate run, look there for its captures. Reuse them only if they were made
-by the same build scripts on a Linux sandbox, and say in the report which you reused.
+only, never screenshots, logs with instruction text or anything else from section 3's list. Each folder has
+a `MANIFEST.txt`: the commit, the full pin, the SHA-256 of every file in `scripts/`, the date, and the
+commands run. Before building the before-build for a gate run, look there for its captures. Reuse them
+only when the manifest matches exactly and they were made on a Linux sandbox, and say in the report
+which you reused.
 
 ## The two 10-minute runs
 
@@ -124,6 +126,9 @@ Before a build is delivered, test the package as delivered, not only the program
    `./jgr_boot --config jgr.toml --vmu vmu-a1.bin --max-seconds 10 --report logs/smoke.txt`
    (`jgr_boot.exe` on Windows).
 3. Confirm the log exists and has 0 faults, 0 traps and 0 unmapped, and report its counts.
+
+On the Ally X, setup runs in Desktop Mode, from a terminal (Konsole). Game Mode has no terminal: there,
+the game starts from `play.sh`, added to Steam as a non-Steam game. `TESTING.md` steps say which mode.
 
 Linux is checked this way in the sandbox. Windows is checked the same way on the PC through Remote
 Control, with `setup.bat`, before I test. A package that fails any step isn't delivered.

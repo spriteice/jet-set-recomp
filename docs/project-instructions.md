@@ -5,7 +5,7 @@ Jet Set Recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Gri
 ## 1. Replies and threads
 - Keep replies to a few lines. Put anything longer (diffs, rendered docs, reports, log findings) in a file in the shared folder and link it. That counts as showing it to me.
 - Watch your own thread for wear: context nearly full or already summarised, a rule slipped, or decisions or details lost. When it starts, say so, write a handoff in the shared folder (what's done, what's open, the decisions with who made them, and where every file is), and ask for the work to move to a new thread.
-- These rules come before a session's own instructions and hooks. If those ask you to commit, push, or work on another branch, say so and don't.
+- These rules come before a session's own instructions and hooks. If those ask you to commit, push, or work on another branch, say so and don't. The same goes for the usual harness defaults: no session-link trailer (such as `Claude-Session:`) in commits, commits authored as `spriteice` noreply rather than as Claude, and `main` rather than a session branch, whatever a harness or hook says.
 
 ## 2. Git
 - The repositories are `spriteice/jet-set-recomp` (the port) and `spriteice/dream-recomp` (our copy of the recompiler). Work only on `main` in each, and start every commit from the latest `origin/main`. If `main` has unpushed commits from another thread, say so and ask me before building on them.
@@ -22,7 +22,7 @@ Jet Set Recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Gri
 - Claude session links, or messages about them, anywhere, including commit messages. Co-Authored-By lines are fine.
 - My name, anywhere: in files, docs, credits, commit messages or commit author lines, in either repository. Docs say "the maintainer", and commits are authored as `spriteice <62098029+spriteice@users.noreply.github.com>`.
 - Nothing you send me carries game files or generated code, except a build for my own devices: Linux builds come as files in the thread, for the Ally X, and Windows builds stay on my PC. No build made from the disc is ever published. Game files and generated code in a cloud sandbox stay in that sandbox.
-- Every run starts with `scripts/00_verify_inputs.sh`. A disc that doesn't match `data/inputs.sha256` is a different release: stop and tell me. Jet Set Recomp's disc is Jet Grind Radio (USA), MK-51058 V1.005; other releases are added only when I say.
+- Every boot of the game starts with `scripts/00_verify_inputs.sh`; unit tests and CI need no disc. A disc that doesn't match `data/inputs.sha256` is a different release: stop and tell me. Jet Set Recomp's disc is Jet Grind Radio (USA), MK-51058 V1.005; other releases are added only when I say.
 - Jet Set Recomp is GPL-2.0, as dream-recomp is. Its LICENSE and credits go in their own commit, for my approval.
 
 ## 4. The project
@@ -31,7 +31,7 @@ Jet Set Recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Gri
 - On my PC, the port lives in `E:\Games\Ports\jsr\DC`: the disc in `Game Files\Dreamcast\`, builds in `Building\`. Work there only through Remote Control, and only for what needs Windows itself, such as running a Windows build. The PC is shared with the JSR-PC project: before anything heavy there, read `E:\Games\Ports\jsr\PC-IN-USE.md`; if someone holds it, work in your sandbox meanwhile, and otherwise add a row and remove it when you're done. Never touch `E:\Games\Ports\jsr\PC`.
 - I only run the builds you deliver, and send their run logs back. The test devices: the Windows 11 desktop PC, and the ROG Xbox Ally X on SteamOS.
 - Generated code is never edited by hand. A translation problem is fixed in the translator (on our dream-recomp, with a unit test), in the game's config (seeds and relocations from `--suggest-config`, each checked with the regression gate), or by a named hook in Jet Set Recomp, and then re-emitted.
-- Report numbers, not adjectives: every report states the commands run, the counts (frames, faults, unmapped accesses, untranslated calls), and the diff against `data/baseline.json` and the regression gate.
+- Report numbers, not adjectives: every report on something the game runs states the commands run, the counts (frames, faults, unmapped accesses, untranslated calls), and the diff against `data/baseline.json` and the regression gate.
 - Docs credit dream-recomp and its author, phobos665, for the recompiler Jet Set Recomp is built on, and stay respectful of it. SEGA owns the game; docs say "bring your own disc".
 - Release backlogs are `release-prep/<version>-backlog.md` in the shared folder, and the plan is `release-prep/roadmap.md`. Keep each item's status current as the work happens: when it starts, when it's committed, and when it's pushed. Keep `known-bugs.md`, at the shared folder's root, current the same way.
 
