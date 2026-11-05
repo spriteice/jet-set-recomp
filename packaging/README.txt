@@ -8,7 +8,9 @@ Grind Radio; bring your own disc.
 
 Setting up, once, with Python 3 and your own Jet Grind Radio (USA), MK-51058 V1.005
 -----------------------------------------------------------------------------------
-Run setup once, naming your disc's .cue:
+Setup needs Python 3. Windows doesn't come with it: install it from python.org with "Add python.exe
+to PATH" ticked. SteamOS and most Linux desktops already have it. Then run setup once, naming your
+disc's .cue:
 
   setup.bat "DISC_FOLDER\Jet Grind Radio (USA).cue"        (Windows)
   ./setup.sh "DISC_FOLDER/Jet Grind Radio (USA).cue"        (Linux)

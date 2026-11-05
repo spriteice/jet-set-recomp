@@ -332,6 +332,19 @@ class FetchDreamRecomp(unittest.TestCase):
 class SetupErrors(unittest.TestCase):
     """Setup is the player's first step, so its scripts say what's wrong instead of a traceback."""
 
+    def test_setup_says_when_python_is_missing(self):
+        with tempfile.TemporaryDirectory() as folder:
+            shutil.copy(ROOT / "packaging/setup.sh", folder)
+            # A PATH with the one tool the script uses before Python, and no python3, stands in for a
+            # machine without it. The shell is named by its path, so it isn't looked up there.
+            (pathlib.Path(folder) / "bin").mkdir()
+            os.symlink(shutil.which("dirname"), f"{folder}/bin/dirname")
+            result = subprocess.run(["/bin/sh", f"{folder}/setup.sh", "game.cue"], capture_output=True, text=True,
+                                    env={"PATH": f"{folder}/bin"})
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Python 3 isn't installed", result.stderr)
+        self.assertNotIn("not found", result.stderr)
+
     def run_script(self, name: str, *args: str, **env):
         return subprocess.run([sys.executable, "-I", str(ROOT / "scripts" / name), *args],
                               capture_output=True, text=True, env=dict(os.environ, **env))
