@@ -133,12 +133,14 @@ class Package(unittest.TestCase):
             self.assertFalse((self.out / name).exists(), name)
 
     def play(self):
-        return subprocess.run(["sh", str(self.out / "play.sh")], capture_output=True, text=True)
+        return subprocess.run(["sh", str(self.out / "play.sh")], capture_output=True, text=True,
+                              env=dict(os.environ, JGR_NO_DIALOG="1"))
 
     def test_play_stops_and_says_why_before_setup(self):
         result = self.play()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Run setup first", result.stderr)
+        self.assertIn("Run setup first", (self.out / "logs/launcher.txt").read_text())
         self.assertFalse((self.out / "ran.txt").exists())
 
     def test_play_runs_with_a_timestamped_log_after_setup(self):
