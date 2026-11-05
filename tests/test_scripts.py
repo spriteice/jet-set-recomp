@@ -187,5 +187,47 @@ class AuditCommits(unittest.TestCase):
         self.assertIn("a denied word", audit.audit_file(path, pathlib.PurePath("notes.md"), ["Pat"]))
 
 
+class GitSetup(unittest.TestCase):
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        self.repo = self.folder / "repo"
+        subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
+
+    def setup(self, **env):
+        env = dict(os.environ, HOME=str(self.folder), **env)
+        return subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(self.repo)],
+                              capture_output=True, text=True, env=env)
+
+    def config(self, key: str) -> str:
+        return subprocess.run(["git", "-C", str(self.repo), "config", "--local", "--get", key],
+                              capture_output=True, text=True).stdout.strip()
+
+    def test_it_sets_the_project_identity_and_says_unsigned(self):
+        env = {k: v for k, v in os.environ.items() if k != "JSR_SIGNING_KEY"}
+        result = subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(self.repo)],
+                                capture_output=True, text=True, env=dict(env, HOME=str(self.folder)))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(f"{self.config('user.name')} <{self.config('user.email')}>", audit.IDENTITY)
+        self.assertIn("not signed with the project key", result.stdout)
+        self.assertEqual(self.config("commit.gpgsign"), "")
+
+    def test_a_bad_key_stops_with_a_message(self):
+        result = self.setup(JSR_SIGNING_KEY="bm90IGEga2V5")  # "not a key"
+        self.assertNotEqual(result.returncode, 0)
+        self.assertNotEqual(self.config("commit.gpgsign"), "true")
+
+    @unittest.skipUnless(shutil.which("ssh-keygen"), "needs ssh-keygen")
+    def test_a_signing_key_turns_signing_on(self):
+        key = self.folder / "k"
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)], check=True)
+        import base64
+        result = self.setup(JSR_SIGNING_KEY=base64.b64encode(key.read_bytes()).decode())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.config("commit.gpgsign"), "true")
+        self.assertEqual(self.config("gpg.format"), "ssh")
+        self.assertEqual(self.config("gpg.ssh.program"), "ssh-keygen")
+
+
 if __name__ == "__main__":
     unittest.main()
