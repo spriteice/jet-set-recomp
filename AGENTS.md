@@ -1,7 +1,8 @@
 # Agents
 
 Any coding agent working here follows [CLAUDE.md](CLAUDE.md) and the documents it lists. This file
-adds the map.
+adds the map. Code here is functional first, then robust, then performant
+(`docs/project-rules.md`, "How it's written").
 
 ## The layout
 

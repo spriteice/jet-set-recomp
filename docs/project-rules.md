@@ -55,12 +55,45 @@ Decide this first.
 
 ## How it's written
 
-In priority order:
+Every change is judged by three principles, in this order. When two pull against each other, the higher
+one wins, and the report says what the lower one gave up. If the trade-off looks wrong, stop and ask.
 
-1. **Robust:** handle the general case. Model what the console does, not what one case needs.
-2. **Focused:** one change per commit. A commit either restructures, with no change in behaviour, or
-   changes behaviour, never both.
-3. **Clean:** match the surrounding style. dream-recomp's C++ passes clang-format 20.1.7.
+1. **Functional: it works, for the player, on both platforms.**
+   - Behave as the game does on a real Dreamcast. Where that isn't known, find out before writing code:
+     a run, a write log, the console's documentation, or ask.
+   - "Works" means shown working: a test, a gate run, a 10-minute run or a device step that passed.
+     Anything not shown is "unverified", never "fixed".
+   - A change that works on one platform and breaks or skips the other isn't done.
+   - Don't trade correctness for anything: not speed, not tidiness, not a smaller diff.
+
+2. **Robust: it keeps working in cases nobody tested.**
+   - Fix the class of bug, not the case in front of you. Before writing a fix, name the inputs or states
+     that would break it, and handle them.
+   - Model what the console's hardware and BIOS do, not what this one call needs.
+   - Fix it where it's caused. Never edit the recompiled code: it's regenerated on every build, so an
+     edit is lost and hides the real fault. Find the layer that owns the behaviour ("Where code goes":
+     the translator, the runtime, the renderer, the game's config or a named hook), fix it there, and
+     re-emit.
+   - Check every input the code doesn't control (files, the disc, settings, devices, guest addresses)
+     where it enters. When one is wrong, cope with it on purpose or stop with a message that says what
+     and why. Never carry on silently, and never crash with no log.
+   - Prefer an error the player can act on ("Missing disc.gdi. Run setup first.") to a code.
+
+3. **Performant: full speed, with room to spare, on the slowest test device.**
+   - The bar is the game's own frame rate, held steady on the Ally X in SteamOS Game Mode, not on the
+     desktop PC.
+   - Choose the design that is cheap by construction: no per-frame allocation, file access or
+     shader compiles on the game's hot path, and no work repeated that could be done once.
+   - Measure before and after any change made for speed, with the same run and the numbers in the
+     report. A speed-up you can't measure isn't one, and isn't kept for its own sake.
+   - Don't trade 1 or 2 for speed. A fast path that's only right for some inputs has to fall back
+     safely for the rest.
+
+Every change is also:
+
+- **Focused:** one change per commit. A commit either restructures, with no change in behaviour, or
+  changes behaviour, never both.
+- **Clean:** match the surrounding style. dream-recomp's C++ passes clang-format 20.1.7.
 
 Reuse what exists: search before adding a function, and justify each new one.
 

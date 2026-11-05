@@ -12,6 +12,9 @@ Read these before you work, in this order:
 
 If these disagree, stop and tell the maintainer. Don't pick one.
 
+Code is built by three principles, in priority order: functional, robust, performant
+(`docs/project-rules.md`, "How it's written").
+
 The ones most easily broken:
 
 - Nothing from the disc, or made from it, goes in a repo or a message. `python3 scripts/audit_repo.py . --commits HEAD`
