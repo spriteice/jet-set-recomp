@@ -5,8 +5,7 @@
 #   scripts/08_git_setup.sh [REPO]     (REPO defaults to this checkout; run it for dream-recomp too)
 #
 # JSR_SIGNING_KEY is the base64 of a signing-only SSH private key, registered on GitHub as a Signing
-# Key. Without it, commits aren't signed with the project's key,
-# and this says so.
+# Key. Without it, commits aren't signed with the project's key, and this says so.
 set -euo pipefail
 
 repo="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
@@ -20,9 +19,11 @@ if [ "$(git -C "$repo" rev-parse --is-shallow-repository)" = true ]; then
 fi
 
 if [ -n "${JSR_SIGNING_KEY:-}" ]; then
+    command -v ssh-keygen >/dev/null || { echo "signing needs ssh-keygen: install openssh-client (scripts/09_setup_sandbox.sh does)" >&2; exit 1; }
     key="${JSR_SIGNING_KEY_FILE:-$HOME/.ssh/jsr_signing}"
     mkdir -p "$(dirname "$key")"
-    (umask 077 && printf '%s' "$JSR_SIGNING_KEY" | base64 -d > "$key")
+    (umask 077 && printf '%s' "$JSR_SIGNING_KEY" | base64 -d > "$key" 2>/dev/null) ||
+        { echo "JSR_SIGNING_KEY isn't valid base64 (make it with: base64 -w0 KEYFILE)" >&2; exit 1; }
     ssh-keygen -y -f "$key" >/dev/null || { echo "JSR_SIGNING_KEY isn't a valid SSH private key" >&2; exit 1; }
     git -C "$repo" config gpg.format ssh
     # A harness may set its own signing program globally; this key is signed with plain ssh-keygen.

@@ -49,11 +49,11 @@ and it made Windows drift from Linux at frame 51, so a MinGW build without FMA d
 
 ## Before a commit
 
-**In Jet Set Recomp:** `python3 scripts/audit_repo.py . --commits HEAD` reports CLEAN, `python3 -m unittest
-discover -s tests` passes, and `bash -n` and `shellcheck` pass on every script. The audit checks names
-only with a denylist: in a sandbox, write the maintainer's name to `.git/info/audit-denylist` (never a
-tracked file); CI reads it from the `AUDIT_DENYLIST` secret. `.github/workflows/ci.yml` runs the same
-on GitHub, which has no disc.
+**In Jet Set Recomp:** `python3 scripts/audit_repo.py . --commits HEAD` reports CLEAN,
+`python3 -m unittest discover -s tests` passes, and `bash -n` and `shellcheck` pass on every script. The
+audit checks names only with a denylist: in a sandbox, write the maintainer's name to
+`.git/info/audit-denylist` (never a tracked file); CI reads it from the `AUDIT_DENYLIST` secret.
+`.github/workflows/ci.yml` runs the same on GitHub, which has no disc.
 
 **In dream-recomp:** on the exact tree, on Linux:
 
@@ -89,11 +89,11 @@ keyed to one disc and build, so they aren't comparable across machines.
 
 Captures and write hashes outlive a sandbox in the shared folder's `captures/<commit>-<pin>/`, where
 `<commit>` is this repo's commit and `<pin>` the first 7 digits of the pin. They hold hashes and counts
-only, never screenshots, logs with instruction text or anything else from section 3's list. Each folder has
-a `MANIFEST.txt`: the commit, the full pin, the SHA-256 of every file in `scripts/`, the date, and the
-commands run. Before building the before-build for a gate run, look there for its captures. Reuse them
-only when the manifest matches exactly and they were made on a Linux sandbox, and say in the report
-which you reused.
+only, never screenshots, logs with instruction text or anything else from section 3's list. Each
+folder has a `MANIFEST.txt`: the commit, the full pin, the SHA-256 of every file in `scripts/`, the
+date, and the commands run. Before building the before-build for a gate run, look there for its
+captures. Reuse them only when the manifest matches exactly and they were made on a Linux sandbox, and
+say in the report which you reused.
 
 ## The two 10-minute runs
 
@@ -150,10 +150,11 @@ One platform at a time, and after any fix, rerun the passed steps it could affec
 
 ## Reports
 
-Every report states the commands run, the counts (frames, faults, unmapped accesses, untranslated calls),
-and the diff against `data/baseline.json` and the gate. A change report also has: the root cause and its
-model, the code's history, files touched, the regression test and that it fails without the fix, each
-hook's reason, docs updated, platforms built or verified, what to test, and what's unverified.
+Every report on something the game runs states the commands run, the counts (frames, faults, unmapped
+accesses, untranslated calls), and the diff against `data/baseline.json` and the gate. A change report
+also has: the root cause and its model, the code's history, files touched, the regression test and that
+it fails without the fix, each hook's reason, docs updated, platforms built or verified, what to test,
+and what's unverified.
 
 ## Review pack
 

@@ -32,6 +32,10 @@ JSR-PC project.
 | Claude may open a game window on the PC at any time, noting it in `PC-IN-USE.md` | Maintainer (card) | 5 Nov, about 01:20 |
 | The repo is renamed `spriteice/jet-set-recomp`, shown as "Jet Set Recomp"; older rows keep the old name, JSR-recomp | Maintainer (card) | 5 Nov 09:57 |
 | Gate captures and write hashes are kept between sandboxes in the shared folder's `captures/` | Claude proposed; Maintainer (card) | 5 Nov 10:03 |
+| Code is built by three principles, in priority order: functional, robust, performant | Maintainer | 5 Nov 10:27 to 10:32 |
+| Commits are signed with a signing-only SSH key from the cloud environment, so GitHub shows them Verified | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
+| A pre-approved thread may move the pin to its own dream-recomp work when nothing measured changes | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
+| The 10-minute runs' sandbox speed is a stand-in for performance, with a 15% margin | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
 
 Not decided yet: version names, whether a release drops the interpreter fallback, and whether other
 disc releases are ever added.

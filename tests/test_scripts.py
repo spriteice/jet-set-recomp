@@ -212,10 +212,24 @@ class GitSetup(unittest.TestCase):
         self.assertIn("not signed with the project key", result.stdout)
         self.assertEqual(self.config("commit.gpgsign"), "")
 
+    def with_failing_ssh_keygen(self) -> str:
+        """A PATH whose ssh-keygen rejects every key, so the checks run without the real tool."""
+        stub = self.folder / "bin"
+        stub.mkdir()
+        (stub / "ssh-keygen").write_text("#!/bin/sh\nexit 1\n")
+        (stub / "ssh-keygen").chmod(0o755)
+        return f"{stub}{os.pathsep}{os.environ['PATH']}"
+
     def test_a_bad_key_stops_with_a_message(self):
-        result = self.setup(JSR_SIGNING_KEY="bm90IGEga2V5")  # "not a key"
+        result = self.setup(JSR_SIGNING_KEY="bm90IGEga2V5", PATH=self.with_failing_ssh_keygen())  # "not a key"
         self.assertNotEqual(result.returncode, 0)
+        self.assertIn("isn't a valid SSH private key", result.stderr)
         self.assertNotEqual(self.config("commit.gpgsign"), "true")
+
+    def test_a_key_that_isnt_base64_stops_with_a_message(self):
+        result = self.setup(JSR_SIGNING_KEY="!!not base64", PATH=self.with_failing_ssh_keygen())
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("isn't valid base64", result.stderr)
 
     @unittest.skipUnless(shutil.which("ssh-keygen"), "needs ssh-keygen")
     def test_a_signing_key_turns_signing_on(self):

@@ -11,8 +11,9 @@ rules pack of 4 November 2026.
 Do all six, in one review pack (`docs/build-and-test-reference.md`, "Review pack"), then wait for my
 approval. A pre-approved thread doesn't wait (`docs/project-instructions.md`, section 5).
 
-1. Run `git status`, `git diff --cached --stat` and `python3 scripts/audit_repo.py . --commits HEAD`, and
-   confirm that nothing on the "never in the repo" list is staged. If `.gitignore` doesn't cover it, tell me.
+1. Run `git status`, `git diff --cached --stat` and `python3 scripts/audit_repo.py . --commits HEAD`,
+   and confirm that nothing on the "never in the repo" list is staged. If `.gitignore` doesn't cover it,
+   tell me.
 2. Show me the full diff.
 3. Show me the proposed commit message.
 4. For a fix: the root cause and the model behind it, and its regression test. For a feature: where
@@ -46,8 +47,8 @@ Decide this first.
    is and how it was found, and is checked with the regression gate. A mid-function address the
    runtime resolves itself isn't seeded.
 6. **Settings.** A new feature can have a setting to turn it off. A fix gets a switch back to the old
-   behaviour only while it's being tested, and it's removed once the fix passes its device steps. Defaults are what
-   ships.
+   behaviour only while it's being tested, and it's removed once the fix passes its device steps.
+   Defaults are what ships.
 7. **Hooks.** Replacing or hooking one game function is right only when that function's own logic is
    the root cause. Each is deliberate, named for what it does, and uses named constants. Its comment
    says what's wrong in the game's function, and why the translator and runtime aren't the cause. If
@@ -55,7 +56,8 @@ Decide this first.
    hook mechanism yet: the first hook starts as a design proposal for my yes, before any hook code.
 8. **A second fix in one place is a review.** Before proposing a fix, read the code's history
    (`git log -L`) with full history fetched first (`git fetch --unshallow`, in both repos): a cloud
-   clone is shallow, and a shallow log shows no earlier fix whether there was one or not. If it already had a fix for a related bug, propose a review of the mechanism first.
+   clone is shallow, and a shallow log shows no earlier fix whether there was one or not. If it
+   already had a fix for a related bug, propose a review of the mechanism first.
 
 ## How it's written
 
@@ -110,8 +112,8 @@ build is `Release`, which compiles asserts out.
 
 **Tests link the code they test,** never a copy or a piece cut out of a file.
 
-**Docs change with the code,** in the same commit. `docs/status.md`, `known-bugs.md` (the shared folder's root) and the backlog
-are kept current as the work happens.
+**Docs change with the code,** in the same commit. `docs/status.md`, `known-bugs.md` (the shared
+folder's root) and the backlog are kept current as the work happens.
 
 ## Never do
 
@@ -144,9 +146,10 @@ Stop and tell me why instead.
 6. **Report** with numbers (`docs/build-and-test-reference.md`, "Reports").
 
 Several items can run at once, each in its own thread, if they don't change the same code. Commits
-still go onto `main` one at a time, each from the latest `origin/main`. Fetch just before pushing. If
-`origin/main` moved, rebase and rerun the repo checks; rerun the builds and the gate too if the commits
-in between touched code, config or the pin.
+still go onto `main` one at a time, each from the latest `origin/main`. Fetch just before pushing, and
+don't push while `release-prep/RELEASE-IN-PROGRESS.md` exists. If `origin/main` moved, rebase and rerun
+the repo checks; rerun the builds and the gate too if the commits in between touched code, config or
+the pin.
 
 If a rule conflicts with the task, or you can't solve it within the rules, stop and ask. Don't quietly
 bend the rule.

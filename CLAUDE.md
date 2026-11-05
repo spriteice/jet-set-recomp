@@ -22,8 +22,8 @@ signs commits when the environment holds `JSR_SIGNING_KEY`.
 
 The ones most easily broken:
 
-- Nothing from the disc, or made from it, goes in a repo or a message. `python3 scripts/audit_repo.py . --commits HEAD`
-  reports CLEAN before every commit.
+- Nothing from the disc, or made from it, goes in a repo or a message.
+  `python3 scripts/audit_repo.py . --commits HEAD` reports CLEAN before every commit.
 - Work only on `main`. No commit without the maintainer's approval after the checks, unless the
   maintainer pre-approved the thread in their own words. No push, tag or release until the
   maintainer says so. Nothing goes upstream to phobos665 until the maintainer says so.
@@ -33,7 +33,7 @@ The ones most easily broken:
 - Claude session links never go anywhere, commit messages included. Co-Authored-By lines are fine.
 - The maintainer's name never goes in a repo: not in files, docs, commit messages or author lines.
   Write "the maintainer", and author commits as `spriteice <62098029+spriteice@users.noreply.github.com>`.
-- Reports state numbers: commands, frames, faults, unmapped accesses, untranslated calls, and the diff
-  against `data/baseline.json` and the regression gate.
+- Reports on anything the game runs state numbers: commands, frames, faults, unmapped accesses,
+  untranslated calls, and the diff against `data/baseline.json` and the regression gate.
 - Before anything heavy on the maintainer's PC, read and update `E:\Games\Ports\jsr\PC-IN-USE.md`.
   Never touch `E:\Games\Ports\jsr\PC`.

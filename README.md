@@ -10,9 +10,11 @@ published.
 
 ## Status
 
-The translated build boots to the title screen and stays up. On the tested config, two 600
-guest-second runs reached 35,977 frames each, with 0 faults, 0 unmapped accesses and 0 calls falling
-back to the interpreter. Nobody has played a stage through yet, and shadows aren't drawn.
+The translated build is playable on Windows: music, saving, loading, the tutorial and the first level
+work. Two headless 600 guest-second runs reach 35,977 frames each, with 0 faults, 0 unmapped accesses
+and 0 calls falling back to the interpreter; in real play, some code the translator missed still runs
+interpreted. Shadows aren't drawn, a few textures are wrong, and Linux hasn't been tried on SteamOS
+yet.
 [docs/status.md](docs/status.md) has the current state and what's next.
 
 ## Supported disc

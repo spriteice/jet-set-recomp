@@ -12,7 +12,7 @@ adds the map. Code here is functional first, then robust, then performant
 | `data/inputs.sha256` | The disc's hashes |
 | `data/dream-recomp.pin` | The dream-recomp commit this builds on |
 | `data/baseline.json` | The numbers a run is compared with |
-| `scripts/` | Verify, fetch, make the `.gdi`, get the boot file, build, package, audit |
+| `scripts/` | Git setup, verify, fetch, make the `.gdi`, get the boot file, build, package, audit |
 | `packaging/` | What goes in a delivery folder beside the program |
 | `tests/` | Tests of the scripts, with made-up data and no disc |
 | `third_party/dream-recomp/` | Fetched by script, ignored by git, and read-only here |
@@ -38,7 +38,7 @@ Ignored and made on the machine: `games/jgr/disc.gdi`, `games/jgr/boot/`, `build
   absolute paths: `capture LABEL --build "$PWD/build" --config "$PWD/games/jgr/jgr.toml" --game jgr`.
 - Runs use `--rtc-seed 1`. Without it, the console clock comes from the host and runs diverge.
 - `--write-hash FILE` gives a per-frame hash of guest writes, and it's the one signal that reliably
-  catches a change in game logic. It doesn't see drawing, sound or pacing. `docs/test-boot-2026-11-04.md` shows how to use a write log to find the
-  first divergence.
+  catches a change in game logic. It doesn't see drawing, sound or pacing.
+  `docs/test-boot-2026-11-04.md` shows how to use a write log to find the first divergence.
 - The game runs its logic as tasks that switch away partway through a function, which is why resume
   entries and interrupt polls matter so much here.

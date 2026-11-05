@@ -7,7 +7,8 @@ Jet Set Recomp is built on [dream-recomp](https://github.com/phobos665/dream-rec
 - **`data/dream-recomp.pin`** names the commit this repo builds on, and
   `scripts/01_fetch_dream_recomp.sh` fetches it into `third_party/dream-recomp`. It's never vendored.
 - **Moving the pin** is its own commit: re-emit, rebuild, rerun the regression gate and the two
-  10-minute runs, and update `data/baseline.json`.
+  10-minute runs, and record the new pin in `data/baseline.json` (`built_from` and `reproduced_on`). A
+  change to any count or speed in it needs the maintainer's approval.
 - **Offering anything to phobos665/dream-recomp is publishing,** and waits for the maintainer. Two of our
   changes fix dream-recomp itself: the headless build, and the resumed entry poll. The maintainer chose "Not
   yet" on 5 November 2026, so they stay on our copy until the maintainer decides.
