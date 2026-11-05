@@ -45,7 +45,7 @@ In order. `release-prep/roadmap.md` in the shared folder has the milestones.
    scripts. Both 10-minute runs match `data/baseline.json`, and the gate against dream-recomp
    `21315e8` is identical. Linux package in the shared folder's `builds/`; Windows package in
    `Building\2026-11-05-e06a4f9-pin-2013fb7-windows`. Waiting on the maintainer's device tests.
-2. **The maintainer plays build 1:** `play.bat`, then send `last-run.txt`.
+2. **The maintainer plays build 1:** `play.bat`, then send the run logs from `logs\`.
 3. **SteamOS.** Nothing has run on the Ally X yet; the package above is the first to try.
 4. **Playing a stage:** a press script or recording that steers, and the gate's gameplay scenario pointed
    at it.

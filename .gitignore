@@ -41,6 +41,7 @@ vmu-*
 *.regs
 capture-*
 last-run.txt
+logs/
 runs/
 .regress/
 *.log

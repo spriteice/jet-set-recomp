@@ -91,9 +91,10 @@ must match or be explained. A clean run has 0 faults, 0 traps, 0 unmapped and 0 
 
 One folder per build, named `<date>-<commit>-<topic>`, made with `scripts/20_package.sh`.
 It holds no disc file and no boot file; the player's setup makes those.
+Its launchers write a run log for every run, `logs/run-<start time>.txt`, and never overwrite one.
 
-- **Linux:** attached in the thread as a file, for the Ally X. I send `last-run.txt` back the same way.
-- **Windows:** stays on my PC in `Building\`, and you read `last-run.txt` there. If it's cross-built in
+- **Linux:** attached in the thread as a file, for the Ally X. I send its run logs back the same way.
+- **Windows:** stays on my PC in `Building\`, and you read its run logs there. If it's cross-built in
   the cloud, it's copied over once the PC is free. Before I test, run `jgr_boot.exe --help` as a start
   check and report the exit code.
 - **Never published,** in any form, and no build goes to anyone else.
@@ -104,7 +105,7 @@ Check each package's SHA-256 after every copy. With each build, write `TESTING.m
 - numbered steps for what the change touches, each saying what to do, on which device, and what I'd
   see if it works and if it doesn't;
 - which recorded run (`--record-input`) passes each step, or that I test it by hand;
-- what to send back: the results, and every `last-run.txt`.
+- what to send back: the results, and every run log.
 
 One platform at a time, and after any fix, rerun the passed steps it could affect.
 

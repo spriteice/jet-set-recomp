@@ -84,7 +84,7 @@ Stop and tell me why instead.
 
 ## Workflow
 
-1. **Diagnose:** reproduce from my `last-run.txt` or a run of yours, gather evidence, and read the code's
+1. **Diagnose:** reproduce from my run logs or a run of yours, gather evidence, and read the code's
    history. Write down what was seen, the root cause, the evidence, your confidence, and what would
    prove it wrong. For a behaviour difference, `--write-hash` and `--write-log` find the first
    divergence; start there rather than at the symptom.
@@ -94,7 +94,7 @@ Stop and tell me why instead.
 3. **Implement,** with the regression test and the docs.
 4. **Verify** what you can, and call everything else "unverified". Never claim something is fixed
    without evidence. A change made for speed is measured before and after.
-5. **Track my testing.** Read every `last-run.txt` I send in full, and check it against the test list.
+5. **Track my testing.** Read every run log I send in full, and check it against the test list.
    A step is tested only when my results show it. Before asking me to approve a commit, list the
    untested steps and the device each needs.
 6. **Report** with numbers (`docs/build-and-test-reference.md`, "Reports").

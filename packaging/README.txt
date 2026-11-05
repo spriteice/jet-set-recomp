@@ -22,8 +22,9 @@ Run play.bat on Windows or play.sh on Linux. A controller is best: the game stee
 Keyboard: arrow keys are the d-pad, Z X A S are A B X Y, Return is Start, Q and W are the triggers.
 F1 opens the binding screen (a pad's select button does too), F10 shows the frame-rate counter, F12
 writes a screenshot, Esc quits. The memory card vmu-a1.bin is made, blank and formatted, on the
-first run. last-run.txt is written when the game closes; it holds counts only (frames, faults, calls
-the translator missed). Send it back after a test.
+first run. Each run writes its own log when the game closes, in logs/, named by the time the run
+started (logs/run-2026-11-05_09-45-16.txt, say), so no run's log is overwritten. A log holds counts
+only (frames, faults, calls the translator missed). Send back the logs from a test.
 
 What is known
 -------------
@@ -31,4 +32,4 @@ What is known
 - Shadows are missing: the renderer decodes the Dreamcast's modifier volumes but doesn't draw them
   yet, and Jet Grind Radio uses them in every 3D scene.
 - Code the translator never found runs interpreted, more slowly, instead of the game stopping, and
-  last-run.txt lists it.
+  the run's log lists it.
