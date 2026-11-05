@@ -66,7 +66,8 @@ Reuse what exists: search before adding a function, and justify each new one.
 **Every fixed bug gets a regression test** that fails without the fix and passes with it. Every change
 to dream-recomp's emitter also follows its own rule on differential tests (its `CONTRIBUTING.md`). If
 a bug can't be reached from a test without the game, say why, and add what would catch it again: an
-assert, a report counter, or a step on the test list.
+always-on check that counts in the run log, or a step on the test list. Not a bare `assert`: every
+build is `Release`, which compiles asserts out.
 
 **Tests link the code they test,** never a copy or a piece cut out of a file.
 
@@ -80,6 +81,8 @@ Stop and tell me why instead.
 - Per-address special cases that hide a symptom. A measured config entry or a named hook isn't one.
 - Bare numbers: magic numbers, and unnamed addresses or offsets, in code.
 - Sleeps or retries that hide timing bugs.
+- Failing silently. Every exit says why on screen, a launcher stops before the program when a file it
+  needs is missing, and the program writes its run log on every exit path it can.
 - Making up in one layer for a bug in another.
 
 ## Workflow
@@ -100,7 +103,9 @@ Stop and tell me why instead.
 6. **Report** with numbers (`docs/build-and-test-reference.md`, "Reports").
 
 Several items can run at once, each in its own thread, if they don't change the same code. Commits
-still go onto `main` one at a time, each from the latest `origin/main`.
+still go onto `main` one at a time, each from the latest `origin/main`. Fetch just before pushing. If
+`origin/main` moved, rebase and rerun the repo checks; rerun the builds and the gate too if the commits
+in between touched code, config or the pin.
 
 If a rule conflicts with the task, or you can't solve it within the rules, stop and ask. Don't quietly
 bend the rule.

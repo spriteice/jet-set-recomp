@@ -72,6 +72,12 @@ python3 $G capture after --build "$PWD/build" --config "$PWD/games/jgr/jgr.toml"
 python3 $G compare before after
 ```
 
+The gate measures guest writes only. It doesn't see drawing, sound or pacing, so a fix there shows
+"identical" whether it worked or not. Such a fix needs its own test (for the renderer, a dream-recomp
+unit test on a synthetic TA list, with no game art), and its report says the gate doesn't cover it. The
+gate and the baseline cover the attract loop and the first 40 s of gameplay only, and a report says so
+when the change reaches further.
+
 A changed hash is a fact, and whether it matters is a judgement: explain it in the report. Captures are
 keyed to one disc and build, so they aren't comparable across machines.
 
@@ -95,10 +101,20 @@ Its launchers write a run log for every run, `logs/run-<start time>.txt`, and ne
 
 - **Linux:** attached in the thread as a file, for the Ally X. I send its run logs back the same way.
 - **Windows:** stays on my PC in `Building\`, and you read its run logs there. If it's cross-built in
-  the cloud, it's copied over once the PC is free. Before I test, set the folder up for the disc with
-  `setup.bat` (through Remote Control), run `jgr_boot.exe --help` as a start check, and report the
-  exit code. A folder without `disc.gdi` and `boot\1ST_READ.BIN` quits before it writes a log.
+  the cloud, it's copied over once the PC is free.
 - **Never published,** in any form, and no build goes to anyone else.
+
+Before a build is delivered, test the package as delivered, not only the program:
+
+1. Unpack a copy into an empty folder and run its own `setup.sh` (or `setup.bat`) with the disc's
+   `.cue`. Setup writes disc files, so a Linux package is sent from the untouched original.
+2. From that folder, run the program headless for 10 s with the launcher's files:
+   `./jgr_boot --config jgr.toml --vmu vmu-a1.bin --max-seconds 10 --report logs/smoke.txt`
+   (`jgr_boot.exe` on Windows).
+3. Confirm the log exists and has 0 faults, 0 traps and 0 unmapped, and report its counts.
+
+Linux is checked this way in the sandbox. Windows is checked the same way on the PC through Remote
+Control, with `setup.bat`, before I test. A package that fails any step isn't delivered.
 
 Check each package's SHA-256 after every copy. With each build, write `TESTING.md`:
 
