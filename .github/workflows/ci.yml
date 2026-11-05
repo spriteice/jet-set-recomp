@@ -1,0 +1,25 @@
+# CI: the audit and the scripts' tests, on every push and pull request, with none of the game's
+# files. The translator and the game need the disc, so they aren't built here: those checks are in
+# docs/build-and-test-reference.md ("Before a commit").
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-and-scripts:
+    name: Audit and scripts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # v5.0.1
+      - name: Audit
+        run: python3 scripts/audit_repo.py .
+      - name: Scripts' tests
+        run: python3 -m unittest discover -s tests
+      - name: Shell syntax
+        run: for script in scripts/*.sh packaging/*.sh; do bash -n "$script"; done
