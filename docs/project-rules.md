@@ -11,8 +11,8 @@ rules pack of 4 November 2026.
 Do all six, in one review pack (`docs/build-and-test-reference.md`, "Review pack"), then wait for my
 approval. A pre-approved thread doesn't wait (`docs/project-instructions.md`, section 5).
 
-1. Run `git status`, `git diff --cached --stat` and `python3 scripts/audit_repo.py .`, and confirm that
-   nothing on the "never in the repo" list is staged. If `.gitignore` doesn't cover it, tell me.
+1. Run `git status`, `git diff --cached --stat` and `python3 scripts/audit_repo.py . --commits HEAD`, and
+   confirm that nothing on the "never in the repo" list is staged. If `.gitignore` doesn't cover it, tell me.
 2. Show me the full diff.
 3. Show me the proposed commit message.
 4. For a fix: the root cause and the model behind it, and its regression test. For a feature: where

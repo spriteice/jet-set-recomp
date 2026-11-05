@@ -151,5 +151,41 @@ class Package(unittest.TestCase):
         self.assertTrue((self.out / "logs").is_dir())
 
 
+class AuditCommits(unittest.TestCase):
+    def repo(self, author: str, message: str) -> pathlib.Path:
+        root = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, root)
+        name, email = author.split(" <")
+        env = dict(os.environ, GIT_AUTHOR_NAME=name, GIT_AUTHOR_EMAIL=email.rstrip(">"),
+                   GIT_COMMITTER_NAME=name, GIT_COMMITTER_EMAIL=email.rstrip(">"))
+        subprocess.run(["git", "init", "-q", str(root)], check=True)
+        (root / "notes.md").write_text("text\n")
+        subprocess.run(["git", "-C", str(root), "add", "notes.md"], check=True)
+        subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", message], check=True, env=env)
+        return root
+
+    def test_the_project_identity_is_clean(self):
+        root = self.repo(audit.IDENTITY, "Add notes\n\nCo-Authored-By: Someone <a@example.com>")
+        self.assertEqual(audit.audit_commits(root, "HEAD", []), [])
+
+    def test_another_author_is_found(self):
+        root = self.repo("Pat Example <pat@example.com>", "Add notes")
+        found = audit.audit_commits(root, "HEAD", [])
+        self.assertTrue(any("author is not" in item for item in found), found)
+        self.assertTrue(any("committer is not" in item for item in found), found)
+
+    def test_a_session_link_in_a_message_is_found(self):
+        root = self.repo(audit.IDENTITY, "Add notes\n\nhttps://" + "claude" + ".ai/code/session_x")
+        self.assertTrue(any("session link" in item for item in audit.audit_commits(root, "HEAD", [])))
+
+    def test_a_denied_word_is_found_in_messages_and_files(self):
+        root = self.repo(audit.IDENTITY, "Add notes for Pat")
+        self.assertTrue(any("denied word" in item for item in audit.audit_commits(root, "HEAD", ["pat"])))
+        self.assertEqual(audit.denied_words("patch the path", ["pat"]), [])
+        path = root / "notes.md"
+        path.write_text("Thanks, Pat.\n")
+        self.assertIn("a denied word", audit.audit_file(path, pathlib.PurePath("notes.md"), ["Pat"]))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -45,9 +45,11 @@ and it made Windows drift from Linux at frame 51, so a MinGW build without FMA d
 
 ## Before a commit
 
-**In Jet Set Recomp:** `python3 scripts/audit_repo.py .` reports CLEAN, `python3 -m unittest discover -s tests`
-passes, and `bash -n` passes on every script. `.github/workflows/ci.yml` runs the same on GitHub, which
-has no disc.
+**In Jet Set Recomp:** `python3 scripts/audit_repo.py . --commits HEAD` reports CLEAN, `python3 -m unittest
+discover -s tests` passes, and `bash -n` and `shellcheck` pass on every script. The audit checks names
+only with a denylist: in a sandbox, write the maintainer's name to `.git/info/audit-denylist` (never a
+tracked file); CI reads it from the `AUDIT_DENYLIST` secret. `.github/workflows/ci.yml` runs the same
+on GitHub, which has no disc.
 
 **In dream-recomp:** on the exact tree, on Linux:
 

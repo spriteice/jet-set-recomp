@@ -13,7 +13,7 @@ sudo_cmd=""; [ "$(id -u)" -eq 0 ] || sudo_cmd=sudo
 
 $sudo_cmd apt-get update -qq
 $sudo_cmd apt-get install -y -qq clang lld cmake ninja-build pipx python3 mingw-w64 \
-    libvulkan-dev glslc libx11-dev libxext-dev libwayland-dev libxkbcommon-dev
+    libvulkan-dev glslc shellcheck libx11-dev libxext-dev libwayland-dev libxkbcommon-dev
 pipx install "clang-format==20.1.7"
 
 work="$(mktemp -d)"
