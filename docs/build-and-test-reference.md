@@ -53,7 +53,8 @@ commit is pushed, as the pin move. A report on such a build names the dream-reco
    The 10-minute runs take about 6 minutes each and go in the background the same way.
 
 Test builds keep the interpreter fallback (`DREAM_DEV_INTERPRETER=ON`), so a missed call shows up in the
-report instead of stopping the game. Whether a release drops it is an open decision.
+report instead of stopping the game. A release drops it only once my play logs show 0 untranslated
+calls (`docs/release-checklist.md`, step 2).
 
 Windows builds always use `-mfma`, set by dream-recomp's toolchain file. MinGW-w64's `fmaf` isn't fused,
 and it made Windows drift from Linux at frame 51, so a MinGW build without FMA doesn't compile.
@@ -91,9 +92,11 @@ python3 $G compare before after
 
 The gate measures guest writes only. It doesn't see drawing, sound or pacing, so a fix there shows
 "identical" whether it worked or not. Such a fix needs its own test (for the renderer, a dream-recomp
-unit test on a synthetic TA list, with no game art), and its report says the gate doesn't cover it. The
-gate and the baseline cover the attract loop and the first 40 s of gameplay only, and a report says so
-when the change reaches further.
+unit test on a synthetic TA list, with no game art), and its report says the gate doesn't cover it.
+Every drawing feature that's fixed or added gets one such test, shadows included. The gate and the
+baseline cover the attract loop and the first 40 s of gameplay only, and a report says so when the
+change reaches further. A 5-minute play-through, recorded by hand with `--record-input`, is to join
+them as a third scenario (`docs/status.md`, "What's open").
 
 A changed hash is a fact, and whether it matters is a judgement: explain it in the report. Captures are
 keyed to one disc, build and platform: compare only captures made the same way, which is what the

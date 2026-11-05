@@ -49,15 +49,18 @@ past the TIME OVER screen.
 
 In order. `release-prep/roadmap.md` in the shared folder has the milestones.
 
-1. **Untranslated calls from play:** feed the played run's 256 targets to `--suggest-config`, and
+1. **Modifier volumes (shadows),** next, before other bugs: a stencil pass in dream-recomp's Vulkan
+   renderer, with its own unit test. The game uses them in every 3D frame (39 opaque and 1 translucent
+   in the last frame of w1).
+2. **Untranslated calls from play:** feed the played run's 256 targets to `--suggest-config`, and
    check each new entry with the gate (`known-bugs.md`, 11).
-2. **SteamOS.** Nothing has run on the Ally X yet; the package in `builds/` is the first to try.
-3. **Renderer bugs** (`known-bugs.md`, 5 to 8): each needs its own test, because the gate doesn't see
+3. **SteamOS.** Nothing has run on the Ally X yet; the package in `builds/` is the first to try. The
+   next Linux build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to see
+   that its error dialog shows.
+4. **Renderer bugs** (`known-bugs.md`, 5 to 8): each needs its own test, because the gate doesn't see
    drawing.
-4. **Playing a stage:** a press script or recording that steers, and the gate's gameplay scenario pointed
-   at it.
-5. **Modifier volumes (shadows):** a stencil pass in dream-recomp's Vulkan renderer. The game uses them
-   in every 3D frame (39 opaque and 1 translucent in the last frame of w1).
+5. **Playing a stage:** a 5-minute play-through the maintainer records with `--record-input` on a
+   future build, added to the gate as a third scenario and to `data/baseline.json`.
 6. **Rebuild cost:** each config change re-emits 81 MB of C++ in one unit and takes about 15 minutes.
 7. **OpenGL 3.3 core,** later, as its own milestone.
 

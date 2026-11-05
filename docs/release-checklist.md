@@ -17,7 +17,9 @@ that is.
 0. **Mark it:** create `release-prep/RELEASE-IN-PROGRESS.md` in the shared folder, naming the release.
    Step 12 removes it. While it exists, no pre-approved thread pushes.
 1. **Backlog closed:** each item done, or moved with my OK.
-2. **Switches retired,** and nothing left on from debugging.
+2. **Switches retired,** and nothing left on from debugging. The README's build drops the interpreter
+   fallback (`DREAM_DEV_INTERPRETER=OFF`) only if my play logs since the last change show 0
+   untranslated calls; otherwise it keeps it, and the release text says so.
 3. **Main ready:** latest `origin/main`, nothing unpushed from elsewhere, a clean tree.
 4. **Known bugs current,** each open bug marked critical or not. A critical one stops the release here.
 5. **Rules review** of everything since the last release: the audit, session links in commit messages,

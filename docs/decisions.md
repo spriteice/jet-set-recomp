@@ -36,6 +36,9 @@ JSR-PC project.
 | Commits are signed with a signing-only SSH key from the cloud environment, so GitHub shows them Verified | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
 | A pre-approved thread may move the pin to its own dream-recomp work when nothing measured changes | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
 | The 10-minute runs' sandbox speed is a stand-in for performance, with a 15% margin | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
+| A recorded 5-minute play-through joins the gate, and each drawing feature fixed gets its own unit test | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
+| A release drops the interpreter fallback only once play logs show 0 untranslated calls | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
+| Shadows are drawn next, before other bugs | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
+| The Game Mode error dialog is checked as a step in the next Linux build | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
 
-Not decided yet: version names, whether a release drops the interpreter fallback, and whether other
-disc releases are ever added.
+Not decided yet: version names, and whether other disc releases are ever added.
