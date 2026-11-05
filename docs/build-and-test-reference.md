@@ -83,6 +83,12 @@ when the change reaches further.
 A changed hash is a fact, and whether it matters is a judgement: explain it in the report. Captures are
 keyed to one disc and build, so they aren't comparable across machines.
 
+Captures and write hashes outlive a sandbox in the shared folder's `captures/<commit>-<pin>/`, where
+`<commit>` is this repo's commit and `<pin>` the first 7 digits of the pin. They hold hashes and counts
+only, never screenshots, logs with instruction text or anything else from section 3's list. Before
+building the before-build for a gate run, look there for its captures. Reuse them only if they were made
+by the same build scripts on a Linux sandbox, and say in the report which you reused.
+
 ## The two 10-minute runs
 
 Both headless, with `--rtc-seed 1 --max-seconds 600 --report FILE --write-hash FILE`:
