@@ -76,6 +76,15 @@ class Audit(unittest.TestCase):
     def test_binary_content_is_found(self):
         self.assertIn("binary content", self.findings("notes.txt", b"abc\0def"))
 
+    def test_the_ubuntu_snapshot_server_is_found_outside_docs(self):
+        server = "snapshot" + ".ubuntu.com"
+        for name, text in (("setup.sh", f"curl https://{server}/ubuntu/20260101T000000Z\n"),
+                           ("ci.yml", "run: sudo apt-get install --" + "snapshot 20260101T000000Z cmake\n"),
+                           ("ubuntu.sources", "Types: deb\nSnapshot: 20260101T000000Z\n")):
+            self.assertTrue(any("snapshot server" in item for item in self.findings(name, text.encode())), name)
+        self.assertFalse(any("snapshot server" in item for item in self.findings("notes.md", server.encode())))
+        self.assertFalse(any("snapshot server" in item for item in self.findings("a.sh", b"apt-get install cmake\n")))
+
     def test_a_session_link_is_found(self):
         link = ("https://" + "claude" + ".ai/code/abc").encode()
         self.assertIn("a Claude session link", self.findings("notes.md", link))

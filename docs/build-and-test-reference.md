@@ -13,6 +13,11 @@ How builds of Jet Set Recomp are made, checked, delivered and reported. It's wri
 - **The cloud,** a thread's sandbox: code, checks, Linux builds, Windows cross-builds, and every commit
   and push. The tools section 4 of the instructions lists may be installed there
   (`scripts/09_setup_sandbox.sh`). Every clone is set up first with `scripts/08_git_setup.sh`.
+  Packages come from the usual archives. Ubuntu's snapshot server is never used by a build: if pinned
+  packages are ever needed, they're pushed to our GitHub first, and every local build, sandbox and
+  GitHub CI run installs them from there. The server is used only to update that copy, when a package
+  needs it (section 4 of the instructions). The audit flags the server in any script, workflow or
+  config here, so the copy's own update script lives with the copy.
 - **My PC,** through Remote Control and only for what needs Windows itself, such as running a Windows
   build. Everything is under `E:\Games\Ports\jsr\DC`: the disc in `Game Files\Dreamcast\`, builds in
   `Building\`. Before anything heavy, read `E:\Games\Ports\jsr\PC-IN-USE.md`, add a row saying whether a
