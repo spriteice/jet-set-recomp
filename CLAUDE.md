@@ -17,7 +17,8 @@ Code is built by three principles, in priority order: functional, robust, perfor
 (`docs/project-rules.md`, "How it's written").
 
 Right after cloning, run `scripts/08_git_setup.sh` here, and `scripts/08_git_setup.sh PATH` for a
-dream-recomp clone. It sets Claude's identity, fetches full history (the rules read it), and keeps the
+dream-recomp clone. It sets Claude's identity, fetches full history (the rules read it) and the latest
+`origin/main` (a sandbox's clone can be behind it, or hold a history that was re-made), and keeps the
 sandbox's commit signing, so GitHub shows commits Verified.
 
 The ones most easily broken:

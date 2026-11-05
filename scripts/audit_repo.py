@@ -43,7 +43,11 @@ IDENTITY = "Claude <noreply@anthropic.com>"
 
 # Split so this file doesn't match itself.
 SESSION_LINK = re.compile("claude" + r"\.ai/(code|chat|session|project)|" + "session" + r"_0[0-9A-Za-z]{12,}")
-GENERATED_CODE = re.compile(r"static void fn_[0-9a-f]{8}(__resume)?\(Ctx& c, Memory& m")
+# The emitter's two signatures (dream-recomp translator/src/emit/emit.cpp): the plain body is
+# `void fn_XXXXXXXX(Ctx& c, Memory& m) {`, the resume body `static void fn_XXXXXXXX__resume(Ctx& c,
+# Memory& m, std::uint32_t resume_pc) {`. A signature change there would silence this check, so a pin
+# move looks at those lines.
+GENERATED_CODE = re.compile(r"(static )?void fn_[0-9a-f]{8}(__resume)?\(Ctx& c, Memory& m")
 # Ubuntu's snapshot server, by address or through apt's snapshot option. Packages from it come from our
 # own copy on GitHub instead (docs/project-instructions.md, section 4). Split so this file doesn't match.
 UBUNTU_SNAPSHOT = re.compile("snapshot" + r"\.ubuntu\.com|\bapt(-get)?\b[^\n]*\s(--snapshot|-S)\b|^Snapshot:", re.M)

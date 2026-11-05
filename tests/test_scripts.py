@@ -111,8 +111,11 @@ class Audit(unittest.TestCase):
         self.assertIn("a Claude session link", self.findings("notes.md", link))
 
     def test_generated_code_is_found(self):
-        code = b"static void fn_0c014070" + b"__resume(Ctx& c, Memory& m, std::uint32_t resume_pc) {"
-        self.assertIn("generated C++", self.findings("notes.cpp", code))
+        # Both of the emitter's signatures: the resume body is static, the plain body isn't.
+        resume = b"static void fn_0c014070" + b"__resume(Ctx& c, Memory& m, std::uint32_t resume_pc) {"
+        plain = b"void fn_0c014070" + b"(Ctx& c, Memory& m) { fn_0c014070__resume(c, m, 0); }"
+        for code in (resume, plain):
+            self.assertIn("generated C++", self.findings("notes.cpp", code), code)
 
     def test_instruction_text_is_found(self):
         self.assertIn("instruction text", self.findings("trace.log", b"0c014070: 4f22 sts.l pr,@-r15\n"))
@@ -356,9 +359,9 @@ class GitSetup(unittest.TestCase):
         self.global_config = self.folder / "gitconfig"
         self.global_config.write_text("")
 
-    def setup(self):
+    def setup(self, repo: pathlib.Path | None = None):
         env = dict(os.environ, HOME=str(self.folder), GIT_CONFIG_GLOBAL=str(self.global_config))
-        return subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(self.repo)],
+        return subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(repo or self.repo)],
                               capture_output=True, text=True, env=env)
 
     def config(self, key: str) -> str:
@@ -382,6 +385,26 @@ class GitSetup(unittest.TestCase):
         result = self.setup()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Unverified", result.stderr)
+
+    def test_it_fetches_the_latest_origin_main(self):
+        """A clone can be behind the remote, or hold a history that was re-made, so setup fetches main."""
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com")
+        origin = self.folder / "origin"
+        subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", str(origin)], check=True)
+        commit = ["git", "-C", str(origin), "commit", "-q", "--allow-empty", "--no-gpg-sign", "-m"]
+        subprocess.run([*commit, "first"], check=True, env=env)
+        clone = self.folder / "clone"
+        subprocess.run(["git", "clone", "-q", str(origin), str(clone)], check=True)
+        subprocess.run([*commit, "second"], check=True, env=env)
+        latest = subprocess.run(["git", "-C", str(origin), "rev-parse", "HEAD"], check=True,
+                                capture_output=True, text=True).stdout.strip()
+        result = self.setup(clone)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        fetched = subprocess.run(["git", "-C", str(clone), "rev-parse", "origin/main"], check=True,
+                                 capture_output=True, text=True).stdout.strip()
+        self.assertEqual(fetched, latest)
+        self.assertIn("origin/main is", result.stdout)
 
 
 class FetchDreamRecomp(unittest.TestCase):
