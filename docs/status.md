@@ -67,8 +67,10 @@ In order. `release-prep/roadmap.md` in the shared folder has the milestones.
 
 ## Things that bite
 
-- The PC's `git` on PATH is devkitPro's; use Git for Windows by full path. There's no `gh`, clang,
-  ninja or clang-format on the PC, and none may be installed without asking.
+- The PC's `git` on PATH is devkitPro's; use Git for Windows by full path. Bare `cmd` in PowerShell
+  finds devkitPro's extensionless `cmd` and opens an "open with" popup; use
+  `C:\Windows\System32\cmd.exe`. There's no `gh`, clang, ninja or clang-format on the PC, and none
+  may be installed without asking.
 - `jsrf-build` in WSL on the PC belongs to another project.
 - Git Bash on the PC runs `scripts/00_verify_inputs.sh` fine.
 - Hashing the whole disc takes about 5 minutes on the PC.

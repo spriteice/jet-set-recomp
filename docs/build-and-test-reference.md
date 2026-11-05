@@ -25,7 +25,9 @@ How builds of Jet Set Recomp are made, checked, delivered and reported. It's wri
   from there. The `jsrf-build` WSL distribution there belongs to another project: don't use it.
 
 A session on the PC uses Git for Windows by full path (`C:\Program Files\Git\cmd\git.exe`), because
-devkitPro's MSYS2 git comes first on PATH.
+devkitPro's MSYS2 git comes first on PATH. It calls `cmd.exe` by full path too
+(`C:\Windows\System32\cmd.exe`), never bare `cmd`: devkitPro's extensionless
+`C:\devkitPro\msys2\usr\bin\cmd` shadows it in PowerShell and opens an "open with" popup.
 
 ## The disc in a sandbox
 
