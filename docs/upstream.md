@@ -12,6 +12,12 @@ Jet Set Recomp is built on [dream-recomp](https://github.com/phobos665/dream-rec
 - **Offering anything to phobos665/dream-recomp is publishing,** and waits for the maintainer. Two of our
   changes fix dream-recomp itself: the headless build, and the resumed entry poll. The maintainer chose "Not
   yet" on 5 November 2026, so they stay on our copy until the maintainer decides.
+- **dream-recomp's conventions:** our commits there follow its `CONTRIBUTING.md` where it applies to us:
+  clang-format 20.1.7, a differential test for every emitter change, and an ADR in its `docs/decisions/`
+  for a decision that changes a model (the maintainer, 5 November 2026). Its `WP x.y` commit references
+  are skipped: our work isn't in its work-package plan, and a number made up for it would mislead. The
+  block-exit fix (`697bfc8`) came before this rule and recorded its model change in
+  `docs/emitter-design.md` there.
 - **Credit:** [CREDITS.md](../CREDITS.md). Docs describe dream-recomp's work respectfully, never as
   criticism.
 - **Alternatives looked at:** [research-dreamcomp.md](research-dreamcomp.md).

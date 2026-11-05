@@ -44,6 +44,7 @@ JSR-PC project.
 | Both repos' history is re-made as Claude, signed: every commit of this repo, and our four on dream-recomp, not phobos665's; old hashes are mapped in `docs/commit-map.md` | Claude proposed; Maintainer (card) | 5 Nov 11:26 |
 | Every choice, approval or decision for the maintainer goes on a card, never only in plain text | Maintainer | 5 Nov 10:22 |
 | Every test build has the files it needs to play out of the box: setup already run for the maintainer's disc before it's handed over | Maintainer | 5 Nov 12:13 |
+| Our dream-recomp commits write an ADR in its `docs/decisions/` for a decision that changes a model, and skip its `WP x.y` references | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
 | If Ubuntu's snapshot server is ever needed, its packages are pushed to our GitHub first, and every local build, sandbox and GitHub CI installs only from there; the server is used only to update the copy | Maintainer | 5 Nov 11:55 to 11:56 |
 
 Not decided yet: version names, and whether other disc releases are ever added.

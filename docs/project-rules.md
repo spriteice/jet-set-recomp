@@ -105,7 +105,8 @@ Every change is also:
 Reuse what exists: search before adding a function, and justify each new one.
 
 **Every fixed bug gets a regression test** that fails without the fix and passes with it. Every change
-to dream-recomp's emitter also follows its own rule on differential tests (its `CONTRIBUTING.md`). If
+to dream-recomp's emitter also follows its own rule on differential tests (its `CONTRIBUTING.md`), and a
+change to a model there gets an ADR in its `docs/decisions/` (`docs/upstream.md`). If
 a bug can't be reached from a test without the game, say why, and add what would catch it again: an
 always-on check that counts in the run log, or a step on the test list. Not a bare `assert`: every
 build is `Release`, which compiles asserts out.
