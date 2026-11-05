@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Check the disc against data/inputs.sha256. Every run starts here (docs/project-instructions.md,
-# section 3). A disc that doesn't match is a different release: stop, and tell Aden.
+# section 3). A disc that doesn't match is a different release: stop, and tell the maintainer.
 #
 #   scripts/00_verify_inputs.sh "/path/to/Jet Grind Radio (USA)" [path/to/1ST_READ.BIN]
 #
@@ -49,7 +49,7 @@ while read -r expected name; do
 done < "$list"
 
 if [ "$failed" -ne 0 ]; then
-    echo "The disc does not match data/inputs.sha256: this is a different release. Stop, and tell Aden." >&2
+    echo "The disc does not match data/inputs.sha256: this is a different release. Stop, and tell the maintainer." >&2
     exit 1
 fi
 echo "inputs verified: Jet Grind Radio (USA), MK-51058 V1.005"

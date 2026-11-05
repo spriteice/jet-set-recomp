@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install what the builds and checks need, in a cloud sandbox only. Never run this on Aden's PC
+# Install what the builds and checks need, in a cloud sandbox only. Never run this on the maintainer's PC
 # (docs/project-instructions.md, section 4 lists what may be installed).
 #
 # Makes the Windows prefix too: SDL3 cross-built from source, and the Vulkan import library.

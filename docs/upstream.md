@@ -8,9 +8,9 @@ JSR-recomp is built on [dream-recomp](https://github.com/phobos665/dream-recomp)
   `scripts/01_fetch_dream_recomp.sh` fetches it into `third_party/dream-recomp`. It's never vendored.
 - **Moving the pin** is its own commit: re-emit, rebuild, rerun the regression gate and the two
   10-minute runs, and update `data/baseline.json`.
-- **Offering anything to phobos665/dream-recomp is publishing,** and waits for Aden. Two of our
-  changes fix dream-recomp itself: the headless build, and the resumed entry poll. Aden chose "Not
-  yet" on 5 November 2026, so they stay on our copy until Aden decides.
+- **Offering anything to phobos665/dream-recomp is publishing,** and waits for the maintainer. Two of our
+  changes fix dream-recomp itself: the headless build, and the resumed entry poll. The maintainer chose "Not
+  yet" on 5 November 2026, so they stay on our copy until the maintainer decides.
 - **Credit:** [CREDITS.md](../CREDITS.md). Docs describe dream-recomp's work respectfully, never as
   criticism.
 - **Alternatives looked at:** [research-dreamcomp.md](research-dreamcomp.md).

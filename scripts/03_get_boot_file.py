@@ -45,7 +45,7 @@ def main() -> int:
     digest = hashlib.sha256(data).hexdigest()
     if digest != expected_hash():
         print(f"{boot_name} is SHA-256 {digest}, not what data/inputs.sha256 expects. This is a "
-              "different release: stop, and tell Aden.", file=sys.stderr)
+              "different release: stop, and tell the maintainer.", file=sys.stderr)
         return 1
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(data)

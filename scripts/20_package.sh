@@ -3,7 +3,7 @@
 #
 #   scripts/20_package.sh linux|windows OUT_FOLDER
 #
-# A package holds translated code, so it goes to Aden's own devices only and is never published
+# A package holds translated code, so it goes to the maintainer's own devices only and is never published
 # (docs/project-instructions.md, section 3). It reads the player's own disc at run time.
 set -euo pipefail
 

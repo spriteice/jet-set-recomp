@@ -41,8 +41,8 @@ past the TIME OVER screen.
 
 In order. `release-prep/roadmap.md` in the shared folder has the milestones.
 
-1. **The repo plan.** `prepared\COMMIT-PLAN.md` on the PC. Aden chose a cloud thread, on 5 November.
-2. **Aden plays build 1:** `play.bat`, then send `last-run.txt`.
+1. **The repo plan.** `prepared\COMMIT-PLAN.md` on the PC. The maintainer chose a cloud thread, on 5 November.
+2. **The maintainer plays build 1:** `play.bat`, then send `last-run.txt`.
 3. **A Linux build for the Ally X.** Nothing has run on SteamOS.
 4. **Playing a stage:** a press script or recording that steers, and the gate's gameplay scenario pointed
    at it.
