@@ -119,18 +119,26 @@ folder has a `MANIFEST.txt`: the commit, the full pin, the SHA-256 of every file
 run, look there for its captures. Reuse them only when the manifest matches exactly and they were made
 on a Linux sandbox, and say in the report which you reused.
 
-## The two 10-minute runs
+## The 10-minute runs
 
-Both headless, with `--rtc-seed 1 --max-seconds 600 --report FILE --write-hash FILE`:
+All headless, with `--rtc-seed 1 --max-seconds 600 --report FILE --write-hash FILE`:
 
 - **No input.**
 - **Presses:** `--press start@1500,start@1800,a@2100,start@2400,a@2700,a@3000,start@3300`.
+- **The same two with a memory card:** `--vmu FILE`, naming a file that doesn't exist yet, so the
+  program makes a blank, formatted card, as every player's first run does. The attract loop reads the
+  card and takes code the no-card runs never reach: at the current pin, 2 untranslated targets (bug 11's
+  cause B in `known-bugs.md`) that go once the translator fix is pinned.
 
-Compare both with `data/baseline.json`. Frames, faults, traps, unmapped accesses and untranslated calls
-must match or be explained. A clean run has 0 faults, 0 traps, 0 unmapped and 0 untranslated.
+Compare each with its run in `data/baseline.json` (`no_input`, `presses`, `no_input_vmu`, `presses_vmu`).
+Frames, faults, traps, unmapped accesses and untranslated calls must match or be explained. A clean run
+has 0 faults, 0 traps, 0 unmapped, and the untranslated count and addresses its baseline run records: 0
+without a card.
 
 Speed is the sandbox's stand-in for the performance bar: each run's real-time multiple, compared with
-`linux_sandbox_speed_x`. Sandboxes differ by about 6% on the same build (1.6x and 1.7x), so a drop of
+`linux_sandbox_speed_x`. A run whose entry has `null` there was first made on the Windows PC (the card
+runs, 5 November, at `windows_pc_speed_x`); the first Linux sandbox to make it records the number, with
+my approval, and until then its speed isn't compared. Sandboxes differ by about 6% on the same build (1.6x and 1.7x), so a drop of
 more than 15% is a finding that must be explained, and anything smaller is noise. It isn't the Ally X:
 only a device step there shows the real bar.
 
@@ -161,7 +169,9 @@ Before a build is delivered, test the package as delivered, not only the program
 2. From that folder, run the program headless for 10 s with the launcher's files:
    `./jgr_boot --config jgr.toml --vmu vmu-a1.bin --max-seconds 10 --report logs/smoke.txt`
    (`jgr_boot.exe` on Windows).
-3. Confirm the log exists and has 0 faults, 0 traps and 0 unmapped, and report its counts.
+3. Confirm the log exists and has 0 faults, 0 traps and 0 unmapped, and report its counts. Compare its
+   untranslated call targets with the baseline's card runs (`no_input_vmu`): the same addresses are
+   expected, and a new one is a finding.
 
 Step 2 runs the program itself, not `play.sh` or `play.bat`, which force `--window`. The launchers are
 covered by the unit tests, with a stand-in program, and by the device steps, so a sandbox report

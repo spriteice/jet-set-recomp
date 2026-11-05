@@ -1,5 +1,5 @@
 {
-  "_about": "The numbers a run is compared with (docs/build-and-test-reference.md). Changes only with the maintainer's approval. Runs are headless, --rtc-seed 1, --max-seconds 600, on the final config. Counts only.",
+  "_about": "The numbers a run is compared with (docs/build-and-test-reference.md). Changes only with the maintainer's approval. Runs are headless, --rtc-seed 1, --max-seconds 600, on the final config. Counts only. The *_vmu runs attach a new memory card (a file that doesn't exist yet, so the program makes a blank, formatted one, as a player's first run does); the others attach none. linux_sandbox_speed_x is null where no Linux sandbox has made the run yet.",
   "disc": "Jet Grind Radio (USA), MK-51058 V1.005",
   "discovery": {
     "functions": 12259,
@@ -45,6 +45,56 @@
         "Linux sandbox, run r11, 1.9x real time, 4 Nov 2026",
         "Windows 11, i7-10700K, run w2, 2.7x real time, 5 Nov 2026",
         "Linux sandbox, this repo's build at pin 6c098df68811, 1.8x real time, 5 Nov 2026"
+      ]
+    },
+    "no_input_vmu": {
+      "press": "",
+      "vmu": "a new file, made blank and formatted by the program at start",
+      "frames": 35977,
+      "traps": 0,
+      "faults": 0,
+      "unmapped_accesses": 0,
+      "untranslated_call_targets": 2,
+      "untranslated_addresses": [
+        "0x0c28ed8a",
+        "0x0c28ed94"
+      ],
+      "untranslated_cause": "known-bugs.md 11, cause B: the switch at 0x0c28ed40, cases the attract loop takes only with a card present; 0 once the translator fix is pinned",
+      "linux_sandbox_speed_x": null,
+      "windows_pc_speed_x": 2.4,
+      "interrupts": 229696,
+      "renders": 17927,
+      "gdrom_sectors": 26181,
+      "memory_card": "15 block reads, 0 block writes, 1 media-info reads, 1 screen writes",
+      "sound_samples_nonzero": 22269385,
+      "sound_samples_total": 26460860,
+      "reproduced_on": [
+        "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026"
+      ]
+    },
+    "presses_vmu": {
+      "press": "start@1500,start@1800,a@2100,start@2400,a@2700,a@3000,start@3300",
+      "vmu": "a new file, made blank and formatted by the program at start",
+      "frames": 35977,
+      "traps": 0,
+      "faults": 0,
+      "unmapped_accesses": 0,
+      "untranslated_call_targets": 2,
+      "untranslated_addresses": [
+        "0x0c28ed8a",
+        "0x0c28ed94"
+      ],
+      "untranslated_cause": "known-bugs.md 11, cause B: the switch at 0x0c28ed40, cases the attract loop takes only with a card present; 0 once the translator fix is pinned",
+      "linux_sandbox_speed_x": null,
+      "windows_pc_speed_x": 2.4,
+      "interrupts": 230355,
+      "renders": 17927,
+      "gdrom_sectors": 26218,
+      "memory_card": "15 block reads, 0 block writes, 1 media-info reads, 1 screen writes",
+      "sound_samples_nonzero": 25242025,
+      "sound_samples_total": 26460860,
+      "reproduced_on": [
+        "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026"
       ]
     }
   },

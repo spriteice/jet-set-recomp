@@ -10,7 +10,9 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   in `data/dream-recomp.pin` (`6c098df`), which this repo builds on, then `697bfc8` (each block's exit
   written once, `known-bugs.md` 13) and `cdd66be` (dcdisc across drives, 14), both pushed 5 November
   and not pinned here yet. The first build from this repo matches `data/baseline.json` on both
-  10-minute runs.
+  10-minute runs. Since 5 November the baseline also holds the two runs with a memory card
+  (`no_input_vmu`, `presses_vmu`), made on the PC: 35,977 frames each, 0 faults, 0 traps, 0 unmapped,
+  and 2 untranslated targets that are bug 11's cause B.
 - **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7`
   (named with old hashes, `docs/commit-map.md`) on the PC on 5 November: music, saving, loading, the
   tutorial and entering the first level work. Its run

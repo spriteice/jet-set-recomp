@@ -45,6 +45,7 @@ JSR-PC project.
 | Every choice, approval or decision for the maintainer goes on a card, never only in plain text | Maintainer | 5 Nov 10:22 |
 | Every test build has the files it needs to play out of the box: setup already run for the maintainer's disc before it's handed over | Maintainer | 5 Nov 12:13 |
 | Our dream-recomp commits write an ADR in its `docs/decisions/` for a decision that changes a model, and skip its `WP x.y` references | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
+| The two `--vmu` baseline runs are made on the PC's Windows build; their Linux sandbox speed is recorded at the next pin move | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
 | If Ubuntu's snapshot server is ever needed, its packages are pushed to our GitHub first, and every local build, sandbox and GitHub CI installs only from there; the server is used only to update the copy | Maintainer | 5 Nov 11:55 to 11:56 |
 | A full coverage pass ("map everything first") comes before any renderer work, and the renderer threads pause | Maintainer (card) | 5 Nov 12:36 |
 | The work runs in six phases, in order: map the code; tell translation faults from renderer faults; runtime and platforms; the renderer, one hardware feature at a time, depth before shadows; the whole game; then speed, OpenGL and release. Recorded play-throughs move into the first phase. This replaces "shadows next" of 11:11 | Claude proposed; Maintainer (card) | 5 Nov 12:49 |
