@@ -7,6 +7,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -277,6 +278,37 @@ class FetchDreamRecomp(unittest.TestCase):
         result = self.fetch(second, second_head)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn(second_head, result.stdout)
+
+
+class SetupErrors(unittest.TestCase):
+    """Setup is the player's first step, so its scripts say what's wrong instead of a traceback."""
+
+    def run_script(self, name: str, *args: str, **env):
+        return subprocess.run([sys.executable, "-I", str(ROOT / "scripts" / name), *args],
+                              capture_output=True, text=True, env=dict(os.environ, **env))
+
+    def test_a_missing_cue_is_named(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.run_script("02_make_gdi.py", f"{folder}/none.cue", f"{folder}/disc.gdi")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("No .cue at", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_a_missing_track_is_named(self):
+        with tempfile.TemporaryDirectory() as folder:
+            pathlib.Path(folder, "game.cue").write_text(CUE)
+            result = self.run_script("02_make_gdi.py", f"{folder}/game.cue", f"{folder}/disc.gdi")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("t1.bin", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_a_missing_disc_reader_is_named(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = self.run_script("03_get_boot_file.py", f"{folder}/disc.gdi", f"{folder}/boot/1ST_READ.BIN",
+                                     DCDISC_DIR=folder)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("dcdisc", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

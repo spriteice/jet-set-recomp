@@ -68,8 +68,19 @@ def main() -> int:
         return 2
     cue = pathlib.Path(sys.argv[1]).resolve()
     out = pathlib.Path(sys.argv[2])
-    tracks = parse_cue(cue.read_text())
-    gdi = make_gdi(tracks, lambda name: (cue.parent / name).stat().st_size, cue.parent.as_posix() + "/")
+    if not cue.is_file():
+        print(f"No .cue at {cue}. Name your disc's .cue file, with its folder.", file=sys.stderr)
+        return 1
+    try:
+        tracks = parse_cue(cue.read_text())
+        gdi = make_gdi(tracks, lambda name: (cue.parent / name).stat().st_size, cue.parent.as_posix() + "/")
+    except FileNotFoundError as missing:
+        print(f"The .cue names a track that isn't beside it: {missing.filename}. Keep the .cue and its "
+              ".bin files together, as they were dumped.", file=sys.stderr)
+        return 1
+    except ValueError as bad:
+        print(f"{cue.name} isn't a disc .cue this can read: {bad}", file=sys.stderr)
+        return 1
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(gdi, newline="\n")
     print(f"wrote {out}: {len(tracks)} tracks")
