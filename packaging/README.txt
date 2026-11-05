@@ -18,7 +18,8 @@ disc moves, run it again.
 
 Playing
 -------
-Run play.bat on Windows or play.sh on Linux. A controller is best: the game steers with the stick.
+Run play.bat on Windows or play.sh on Linux. Until setup has run, they say what's missing and
+stop. A controller is best: the game steers with the stick.
 
 Keyboard: arrow keys are the d-pad, Z X A S are A B X Y, Return is Start, Q and W are the triggers.
 F1 opens the binding screen (a pad's select button does too), F10 shows the frame-rate counter, F12

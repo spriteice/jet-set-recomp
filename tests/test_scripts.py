@@ -3,7 +3,10 @@
     python3 -m unittest discover -s tests
 """
 import importlib.util
+import os
 import pathlib
+import shutil
+import subprocess
 import tempfile
 import unittest
 
@@ -86,6 +89,66 @@ class Audit(unittest.TestCase):
     def test_a_large_text_file_is_found(self):
         big = b"x\n" * (audit.MAX_TEXT_BYTES // 2 + 1)
         self.assertTrue(any("too big" in item for item in self.findings("big.md", big)))
+
+
+def fake_checkout(folder: pathlib.Path) -> pathlib.Path:
+    """A copy of this repo's scripts and packaging, with stand-ins for the build and dream-recomp."""
+    root = folder / "repo"
+    for part in ("scripts", "packaging", "games", "data"):
+        shutil.copytree(ROOT / part, root / part)
+    shutil.copy(ROOT / "LICENSE", root / "LICENSE")
+    jgr_boot = root / "build/games/jgr/jgr_boot"
+    jgr_boot.parent.mkdir(parents=True)
+    # Stands in for the program: records that it ran, and its arguments.
+    jgr_boot.write_text('#!/bin/sh\necho "$@" > ran.txt\n')
+    jgr_boot.chmod(0o755)
+    (folder / "prefix/lib").mkdir(parents=True)
+    (folder / "prefix/lib/libSDL3.so.0").write_text("")
+    dream = root / "third_party/dream-recomp"
+    (dream / "tools/dcdisc/dcdisc").mkdir(parents=True)
+    (dream / "tools/dcdisc/dcdisc/__init__.py").write_text("")
+    (dream / "LICENSE").write_text("GPL-2.0\n")
+    return root
+
+
+class Package(unittest.TestCase):
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        root = fake_checkout(self.folder)
+        self.out = self.folder / "package"
+        env = dict(os.environ, DREAM_LINUX_PREFIX=str(self.folder / "prefix"))
+        subprocess.run(["bash", str(root / "scripts/20_package.sh"), "linux", str(self.out)],
+                       check=True, capture_output=True, env=env)
+
+    def test_the_package_holds_what_its_launchers_use(self):
+        for name in ("jgr_boot", "jgr.toml", "play.sh", "setup.sh", "README.txt",
+                     "tools/02_make_gdi.py", "tools/03_get_boot_file.py", "tools/inputs.sha256",
+                     "tools/dcdisc/__init__.py", "licences/LICENSE-jet-set-recomp.txt",
+                     "licences/LICENSE-dream-recomp.txt"):
+            self.assertTrue((self.out / name).exists(), name)
+
+    def test_the_package_holds_nothing_from_the_disc(self):
+        for name in ("disc.gdi", "boot"):
+            self.assertFalse((self.out / name).exists(), name)
+
+    def play(self):
+        return subprocess.run(["sh", str(self.out / "play.sh")], capture_output=True, text=True)
+
+    def test_play_stops_and_says_why_before_setup(self):
+        result = self.play()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Run setup first", result.stderr)
+        self.assertFalse((self.out / "ran.txt").exists())
+
+    def test_play_runs_with_a_timestamped_log_after_setup(self):
+        (self.out / "disc.gdi").write_text("")
+        (self.out / "boot").mkdir()
+        (self.out / "boot/1ST_READ.BIN").write_text("")
+        self.assertEqual(self.play().returncode, 0)
+        args = (self.out / "ran.txt").read_text()
+        self.assertRegex(args, r"--report logs/run-\d{4}-\d\d-\d\d_\d\d-\d\d-\d\d\.txt")
+        self.assertTrue((self.out / "logs").is_dir())
 
 
 if __name__ == "__main__":
