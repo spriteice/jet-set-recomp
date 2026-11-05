@@ -12,20 +12,30 @@ platform="${1:-}"
 out="${2:-}"
 [ -n "$out" ] || { echo "usage: $0 linux|windows OUT_FOLDER" >&2; exit 2; }
 dream="$root/third_party/dream-recomp"
+# A new folder every time, so nothing from a copy that was set up (disc.gdi, boot/) goes with it.
+if [ -e "$out" ] && [ -n "$(ls -A "$out")" ]; then
+    echo "$out isn't empty: make each package in a new folder." >&2
+    exit 1
+fi
+case "$platform" in
+    linux) program="$root/build/games/jgr/jgr_boot" ;;
+    windows) program="$root/build-win/games/jgr/jgr_boot.exe" ;;
+    *) echo "usage: $0 linux|windows OUT_FOLDER" >&2; exit 2 ;;
+esac
+[ -f "$program" ] || { echo "No $program: build it first." >&2; exit 1; }
 
 mkdir -p "$out/licences" "$out/tools"
 case "$platform" in
     linux)
-        cp "$root/build/games/jgr/jgr_boot" "$out/"
+        cp "$program" "$out/"
         cp -P "${DREAM_LINUX_PREFIX:-$HOME/linux/prefix}"/lib/libSDL3.so* "$out/"
         cp "$root/packaging/play.sh" "$root/packaging/setup.sh" "$out/"
         ;;
     windows)
-        cp "$root/build-win/games/jgr/jgr_boot.exe" "$out/"
+        cp "$program" "$out/"
         cp "${DREAM_WIN_PREFIX:-$HOME/win/prefix}/bin/SDL3.dll" "$out/"
         cp "$root/packaging/play.bat" "$root/packaging/setup.bat" "$out/"
         ;;
-    *) echo "usage: $0 linux|windows OUT_FOLDER" >&2; exit 2 ;;
 esac
 
 cp "$root/games/jgr/jgr.toml" "$root/packaging/README.txt" "$out/"

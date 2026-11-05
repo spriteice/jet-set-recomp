@@ -4,6 +4,12 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Without the boot file there's no jgr_boot target, and the build would fail late with "unknown target".
+boot="$root/games/jgr/boot/1ST_READ.BIN"
+if [ ! -f "$boot" ]; then
+    echo "No $boot: make it first (docs/build-and-test-reference.md, Building, steps 1 to 3)." >&2
+    exit 1
+fi
 linux_prefix="${DREAM_LINUX_PREFIX:-$HOME/linux/prefix}"
 "$root/scripts/01_fetch_dream_recomp.sh"
 

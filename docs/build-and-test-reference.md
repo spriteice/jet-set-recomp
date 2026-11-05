@@ -126,7 +126,8 @@ only a device step there shows the real bar.
 
 ## Delivery
 
-One folder per build, named `<date>-<commit>-<topic>`, made with `scripts/20_package.sh`.
+One folder per build, named `<date>-<commit>-<topic>`, made new with `scripts/20_package.sh`, which
+refuses a folder that isn't empty.
 It holds no disc file and no boot file; the player's setup makes those.
 Its launchers write a run log for every run, `logs/run-<start time>.txt`, and never overwrite one.
 

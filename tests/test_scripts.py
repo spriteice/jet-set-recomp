@@ -154,6 +154,48 @@ class Package(unittest.TestCase):
         self.assertTrue((self.out / "logs").is_dir())
 
 
+class PackageRefusals(unittest.TestCase):
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        self.root = fake_checkout(self.folder)
+        self.out = self.folder / "package"
+
+    def package(self):
+        env = dict(os.environ, DREAM_LINUX_PREFIX=str(self.folder / "prefix"))
+        return subprocess.run(["bash", str(self.root / "scripts/20_package.sh"), "linux", str(self.out)],
+                              capture_output=True, text=True, env=env)
+
+    def test_a_folder_that_was_set_up_is_refused(self):
+        self.out.mkdir()
+        (self.out / "disc.gdi").write_text("")
+        result = self.package()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("isn't empty", result.stderr)
+        self.assertFalse((self.out / "jgr_boot").exists())
+
+    def test_a_missing_build_is_named(self):
+        (self.root / "build/games/jgr/jgr_boot").unlink()
+        result = self.package()
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("build it first", result.stderr)
+
+
+class BuildScripts(unittest.TestCase):
+    def test_a_build_with_no_boot_file_stops_before_it_starts(self):
+        folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, folder)
+        root = fake_checkout(folder)
+        shutil.rmtree(root / "games/jgr/boot", ignore_errors=True)
+        for script in ("10_build_linux.sh", "11_build_windows.sh"):
+            with self.subTest(script):
+                result = subprocess.run(["bash", str(root / "scripts" / script)], capture_output=True,
+                                        text=True)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("make it first", result.stderr)
+                self.assertFalse((root / "build").joinpath("CMakeCache.txt").exists())
+
+
 class AuditCommits(unittest.TestCase):
     def repo(self, author: str, message: str) -> pathlib.Path:
         root = pathlib.Path(tempfile.mkdtemp())
