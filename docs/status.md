@@ -9,8 +9,9 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 - **Both repos are set up.** `spriteice/dream-recomp` carries our four fixes on `main`, and this repo
   builds on it at the pin in `data/dream-recomp.pin` (`6c098df`). The first build from this repo matches
   `data/baseline.json` on both 10-minute runs.
-- **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7` on
-  the PC on 5 November: music, saving, loading, the tutorial and entering the first level work. Its run
+- **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7`
+  (named with old hashes, `docs/commit-map.md`) on the PC on 5 November: music, saving, loading, the
+  tutorial and entering the first level work. Its run
   log showed 12,747 frames over 212 s at 1.0x, 0 traps, 0 unmapped, and 256 untranslated call targets
   that ran interpreted (`known-bugs.md`, 11).
 - **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, two wrong

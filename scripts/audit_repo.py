@@ -5,9 +5,7 @@
 
 Looks at what git tracks, plus what's staged, or at every file when ROOT isn't a git checkout. With
 --commits, also checks every commit reachable from REV (HEAD, or origin/main..HEAD): its author and
-committer must be the project's identity, and its message must hold no session link. Commits up to
-LEGACY_TIP were made as spriteice before the identity changed, and that identity is accepted for them
-only.
+committer must be the project's identity, and its message must hold no session link.
 
 Words that must never appear (the maintainer's name) are kept out of the repository, because a list
 here would publish them: they come from the JGR_AUDIT_DENYLIST environment variable (CI reads it from
@@ -41,9 +39,6 @@ FORBIDDEN_NAMES = re.compile(r"^(1st_read.*|jgr_boot.*|vmu-.*|2_dp\..*|sg_dpldr\
 FORBIDDEN_DIRS = {"gen", "boot", "extracted", "runs", "captures", "shots", ".regress"}
 
 IDENTITY = "Claude <noreply@anthropic.com>"
-# The project's commits were authored as spriteice until the maintainer chose Claude, on 5 November 2026.
-LEGACY_IDENTITY = "spriteice <62098029+spriteice@users.noreply.github.com>"
-LEGACY_TIP = "8b7a5fc422ff5290b26ae2ceeb90319a87944124"
 
 # Split so this file doesn't match itself.
 SESSION_LINK = re.compile("claude" + r"\.ai/(code|chat|session|project)|" + "session" + r"_0[0-9A-Za-z]{12,}")
@@ -76,25 +71,17 @@ def denied_words(text: str, words: list[str]) -> list[str]:
     return [word for word in words if re.search(r"\b" + re.escape(word) + r"\b", text, re.I)]
 
 
-def legacy_commits(root: pathlib.Path, tip: str) -> set[str]:
-    """The commits made before the identity changed, or none when this clone doesn't hold tip."""
-    found = subprocess.run(["git", "-C", str(root), "rev-list", tip], capture_output=True, text=True)
-    return set(found.stdout.split()) if found.returncode == 0 else set()
-
-
-def audit_commits(root: pathlib.Path, rev: str, words: list[str], legacy_tip: str = LEGACY_TIP) -> list[str]:
+def audit_commits(root: pathlib.Path, rev: str, words: list[str]) -> list[str]:
     """Findings for every commit reachable from rev, each as 'commit: finding'."""
-    legacy = legacy_commits(root, legacy_tip)
     out = subprocess.run(["git", "-C", str(root), "log", "--format=%H%x1f%an <%ae>%x1f%cn <%ce>%x1f%B%x1e", rev],
                          capture_output=True, check=True, text=True).stdout
     findings = []
     for record in filter(str.strip, out.split("\x1e")):
         commit, author, committer, message = record.strip("\n").split("\x1f", 3)
         short = commit[:7]
-        allowed = {IDENTITY, LEGACY_IDENTITY} if commit in legacy else {IDENTITY}
-        if author not in allowed:
+        if author != IDENTITY:
             findings.append(f"{short}: author is not the project identity")
-        if committer not in allowed:
+        if committer != IDENTITY:
             findings.append(f"{short}: committer is not the project identity")
         if SESSION_LINK.search(message):
             findings.append(f"{short}: a Claude session link in the message")

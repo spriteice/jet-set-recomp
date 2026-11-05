@@ -219,14 +219,6 @@ class AuditCommits(unittest.TestCase):
         self.assertTrue(any("author is not" in item for item in found), found)
         self.assertTrue(any("committer is not" in item for item in found), found)
 
-    def test_the_old_identity_is_clean_only_up_to_the_legacy_tip(self):
-        root = self.repo(audit.LEGACY_IDENTITY, "Add notes")
-        tip = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True,
-                             text=True, check=True).stdout.strip()
-        self.assertEqual(audit.audit_commits(root, "HEAD", [], legacy_tip=tip), [])
-        found = audit.audit_commits(root, "HEAD", [], legacy_tip="0" * 40)
-        self.assertTrue(any("author is not" in item for item in found), found)
-
     def test_a_session_link_in_a_message_is_found(self):
         root = self.repo(audit.IDENTITY, "Add notes\n\nhttps://" + "claude" + ".ai/code/session_x")
         self.assertTrue(any("session link" in item for item in audit.audit_commits(root, "HEAD", [])))
