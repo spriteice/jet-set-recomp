@@ -17,8 +17,9 @@ approval. A pre-approved thread doesn't wait (`docs/project-instructions.md`, se
 3. Show me the proposed commit message.
 4. For a fix: the root cause and the model behind it, and its regression test. For a feature: where
    it lives, and why that's the right place.
-5. For any added or edited document: the whole document, not only its diff. `docs/status.md` is
-   brought up to date with the commit.
+5. For any added or edited document: the whole document, not only its diff. If the commit changes
+   where the work stands, `docs/status.md` says so. On a rebase conflict in `status.md`, keep both
+   sides: it's shared by every thread.
 6. The checks for the commit's exact tree (`docs/build-and-test-reference.md`, "Before a commit").
 
 ## Where code goes
@@ -27,7 +28,8 @@ Decide this first.
 
 1. **The root cause, not the symptom.** A root cause has two parts: what went wrong, and the model that
    let it happen. Name both, and say whether the same model allows other bugs. If the model is the
-   cause, fix the model, however big that is: say so, and size it. If the right place isn't clear,
+   cause, fix the model, however big that is: say so, size it, and propose it before you start, even in
+   a pre-approved thread. If the right place isn't clear,
    stop and ask.
 2. **The right place.** Code goes in the layer that owns the behaviour:
    - dream-recomp's translator, for how SH-4 code is translated;
@@ -44,7 +46,7 @@ Decide this first.
    is and how it was found, and is checked with the regression gate. A mid-function address the
    runtime resolves itself isn't seeded.
 6. **Settings.** A new feature can have a setting to turn it off. A fix gets a switch back to the old
-   behaviour only while it's being tested, and it's removed by the next release. Defaults are what
+   behaviour only while it's being tested, and it's removed once the fix passes its device steps. Defaults are what
    ships.
 7. **Hooks.** Replacing or hooking one game function is right only when that function's own logic is
    the root cause. Each is deliberate, named for what it does, and uses named constants. Its comment
@@ -128,7 +130,9 @@ Stop and tell me why instead.
    prove it wrong. For a behaviour difference, `--write-hash` and `--write-log` find the first
    divergence; start there rather than at the symptom.
 2. **Propose** the fix at the root, sized to the cause, and wait for my go-ahead before editing. A test
-   build can carry a fix before that, to test the diagnosis. A pre-approved thread posts the diagnosis
+   build can carry a fix before that, to test the diagnosis, made at the source like any other fix.
+   The recompiled code is never edited, not even in a test build: diagnose with `--write-log`,
+   `--write-hash` and the runtime's own tracing. A pre-approved thread posts the diagnosis
    and goes on.
 3. **Implement,** with the regression test and the docs.
 4. **Verify** what you can, and call everything else "unverified". Never claim something is fixed
