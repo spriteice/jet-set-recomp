@@ -14,6 +14,8 @@ that is.
 
 ## The steps
 
+0. **Mark it:** create `release-prep/RELEASE-IN-PROGRESS.md` in the shared folder, naming the release.
+   Step 12 removes it. While it exists, no pre-approved thread pushes.
 1. **Backlog closed:** each item done, or moved with my OK.
 2. **Switches retired,** and nothing left on from debugging.
 3. **Main ready:** latest `origin/main`, nothing unpushed from elsewhere, a clean tree.
@@ -30,7 +32,7 @@ that is.
 10. **Push and publish,** source only. Check that no release asset holds a built program.
 11. **Check the release:** the tag is on the release commit, and the README's links work.
 12. **Close out:** a source backup (`git clone --mirror`, `git bundle`, checked with `git fsck`), the
-    backlog marked shipped, and the roadmap moved on.
+    backlog marked shipped, the roadmap moved on, and `RELEASE-IN-PROGRESS.md` removed.
 
 A published tag is never moved. A broken release is fixed in the next one, and listed as a known issue
 until then.

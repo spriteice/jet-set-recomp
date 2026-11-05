@@ -10,7 +10,8 @@ Read these before you work, in this order:
 4. `docs/project-rules.md` before you propose a change, a commit or a doc edit.
 5. `docs/build-and-test-reference.md` before you build, test or deliver anything.
 
-If these disagree, stop and tell the maintainer. Don't pick one.
+If these disagree, stop and tell the maintainer. Don't pick one. If you can't reach the shared folder
+(you're not in the project), say so and work from `docs/status.md`.
 
 Code is built by three principles, in priority order: functional, robust, performant
 (`docs/project-rules.md`, "How it's written").

@@ -144,6 +144,10 @@ in between touched code, config or the pin.
 If a rule conflicts with the task, or you can't solve it within the rules, stop and ask. Don't quietly
 bend the rule.
 
+"Stop and ask", here and everywhere in the rules, means: stop that step, ask once, with the options
+and your recommendation, and carry on with any work that doesn't depend on the answer. The maintainer
+may be away for hours, so don't leave the whole thread idle for one question.
+
 ## What a pre-approval still stops for
 
 `docs/project-instructions.md`, section 5 is the rule. It also stops for: a check or step that still

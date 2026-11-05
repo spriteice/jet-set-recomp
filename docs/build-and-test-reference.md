@@ -35,7 +35,11 @@ the parts from the PC needs my permission. Everything from the disc stays in tha
 3. `python3 scripts/02_make_gdi.py CUE games/jgr/disc.gdi` and
    `python3 scripts/03_get_boot_file.py games/jgr/disc.gdi games/jgr/boot/1ST_READ.BIN`.
 4. `scripts/10_build_linux.sh` and `scripts/11_build_windows.sh`. Each takes about 15
-   minutes: the translator re-emits 81 MB of C++ in one unit.
+   minutes: the translator re-emits 81 MB of C++ in one unit. That's longer than a cloud agent's
+   foreground command limit, so run each in the background with its output in a log file
+   (`scripts/10_build_linux.sh > build-linux.log 2>&1`), and wait for it to finish. A command that
+   timed out isn't a failed build: read the log, and never start a second build over a running one.
+   The 10-minute runs take about 6 minutes each and go in the background the same way.
 
 Test builds keep the interpreter fallback (`DREAM_DEV_INTERPRETER=ON`), so a missed call shows up in the
 report instead of stopping the game. Whether a release drops it is an open decision.
