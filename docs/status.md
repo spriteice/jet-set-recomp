@@ -6,9 +6,11 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 
 ## Where it stands
 
-- **Both repos are set up.** `spriteice/dream-recomp` carries our four fixes on `main`, and this repo
-  builds on it at the pin in `data/dream-recomp.pin` (`6c098df`). The first build from this repo matches
-  `data/baseline.json` on both 10-minute runs.
+- **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`: the four up to the pin
+  in `data/dream-recomp.pin` (`6c098df`), which this repo builds on, then `697bfc8` (each block's exit
+  written once, `known-bugs.md` 13) and `cdd66be` (dcdisc across drives, 14), both pushed 5 November
+  and not pinned here yet. The first build from this repo matches `data/baseline.json` on both
+  10-minute runs.
 - **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7`
   (named with old hashes, `docs/commit-map.md`) on the PC on 5 November: music, saving, loading, the
   tutorial and entering the first level work. Its run
@@ -17,7 +19,9 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 - **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, two wrong
   textures, sparks that don't follow the skates, and pacing while unfocused. `known-bugs.md` in the
   shared folder lists them.
-- **SteamOS hasn't run anything yet.** The first Linux package is in the shared folder's `builds/`.
+- **SteamOS hasn't run anything yet.** Four Linux packages are in the shared folder's `builds/`: the
+  current one is `2026-11-05-de56e83-linux`, and the two `depthfix-test` ones carry an unpushed
+  dream-recomp change.
 
 The two tables and notes below are the first Windows check, made on build 1 before this repo existed.
 
@@ -53,8 +57,11 @@ In order. `release-prep/roadmap.md` in the shared folder has the milestones.
 1. **Modifier volumes (shadows),** next, before other bugs: a stencil pass in dream-recomp's Vulkan
    renderer, with its own unit test. The game uses them in every 3D frame (39 opaque and 1 translucent
    in the last frame of w1).
-2. **Untranslated calls from play:** feed the played run's 256 targets to `--suggest-config`, and
-   check each new entry with the gate (`known-bugs.md`, 11).
+2. **Untranslated calls from play** (`known-bugs.md`, 11): the cause is in the translator, not the
+   config, so don't seed these in `jgr.toml`. Discovery's pointer pass rejects functions with more
+   than 200 instructions before their first exit, and switch recovery drops a bounded table when a
+   case lies past a fragment's end (`bug-11/diagnosis.md` in the shared folder). Three dream-recomp
+   fixes with tests are in progress; then a pin move here, with the gate and the two 10-minute runs.
 3. **SteamOS.** Nothing has run on the Ally X yet; the package in `builds/` is the first to try. The
    next Linux build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to see
    that its error dialog shows.
