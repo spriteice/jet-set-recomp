@@ -1,36 +1,29 @@
 #!/usr/bin/env bash
-# Set a clone up to commit as the project: the spriteice identity, full history, and, when the
-# environment holds the signing key, signed commits that GitHub shows as Verified.
+# Set a clone up to commit as the project: Claude's identity and full history. Commits are signed by
+# the cloud sandbox's own key, which GitHub shows as Verified for that identity, so this keeps that
+# signing and says whether it's on.
 #
 #   scripts/08_git_setup.sh [REPO]     (REPO defaults to this checkout; run it for dream-recomp too)
-#
-# JSR_SIGNING_KEY is the base64 of a signing-only SSH private key, registered on GitHub as a Signing
-# Key. Without it, commits aren't signed with the project's key, and this says so.
 set -euo pipefail
 
 repo="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 git -C "$repo" rev-parse --git-dir >/dev/null
 
-git -C "$repo" config user.name spriteice
-git -C "$repo" config user.email 62098029+spriteice@users.noreply.github.com
+git -C "$repo" config user.name Claude
+git -C "$repo" config user.email noreply@anthropic.com
+# An older version of this script set its own signing key here, which would override the sandbox's.
+for key in gpg.format gpg.ssh.program user.signingkey commit.gpgsign; do
+    git -C "$repo" config --local --unset "$key" || true
+done
 
 if [ "$(git -C "$repo" rev-parse --is-shallow-repository)" = true ]; then
     git -C "$repo" fetch -q --unshallow || echo "could not fetch full history: git log -L will be incomplete" >&2
 fi
 
-if [ -n "${JSR_SIGNING_KEY:-}" ]; then
-    command -v ssh-keygen >/dev/null || { echo "signing needs ssh-keygen: install openssh-client (scripts/09_setup_sandbox.sh does)" >&2; exit 1; }
-    key="${JSR_SIGNING_KEY_FILE:-$HOME/.ssh/jsr_signing}"
-    mkdir -p "$(dirname "$key")"
-    (umask 077 && printf '%s' "$JSR_SIGNING_KEY" | base64 -d > "$key" 2>/dev/null) ||
-        { echo "JSR_SIGNING_KEY isn't valid base64 (make it with: base64 -w0 KEYFILE)" >&2; exit 1; }
-    ssh-keygen -y -f "$key" >/dev/null || { echo "JSR_SIGNING_KEY isn't a valid SSH private key" >&2; exit 1; }
-    git -C "$repo" config gpg.format ssh
-    # A harness may set its own signing program globally; this key is signed with plain ssh-keygen.
-    git -C "$repo" config gpg.ssh.program ssh-keygen
-    git -C "$repo" config user.signingkey "$key"
-    git -C "$repo" config commit.gpgsign true
-    echo "$repo: commits as spriteice, signed"
+if [ "$(git -C "$repo" config --get commit.gpgsign || true)" = true ] &&
+    [ -n "$(git -C "$repo" config --get user.signingkey || true)" ]; then
+    echo "$repo: commits as Claude, signed by the sandbox"
 else
-    echo "$repo: commits as spriteice, not signed with the project key (no JSR_SIGNING_KEY), so GitHub shows them Unverified"
+    echo "$repo: commits as Claude, but this sandbox doesn't sign them, so GitHub shows them Unverified." >&2
+    echo "Say so in the review pack before anything is pushed." >&2
 fi

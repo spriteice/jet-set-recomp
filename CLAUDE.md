@@ -17,8 +17,8 @@ Code is built by three principles, in priority order: functional, robust, perfor
 (`docs/project-rules.md`, "How it's written").
 
 Right after cloning, run `scripts/08_git_setup.sh` here, and `scripts/08_git_setup.sh PATH` for a
-dream-recomp clone. It sets the `spriteice` identity, fetches full history (the rules read it), and
-signs commits when the environment holds `JSR_SIGNING_KEY`.
+dream-recomp clone. It sets Claude's identity, fetches full history (the rules read it), and keeps the
+sandbox's commit signing, so GitHub shows commits Verified.
 
 The ones most easily broken:
 
@@ -32,7 +32,7 @@ The ones most easily broken:
   unit test, the game's config, or a named hook here, then re-emit.
 - Claude session links never go anywhere, commit messages included. Co-Authored-By lines are fine.
 - The maintainer's name never goes in a repo: not in files, docs, commit messages or author lines.
-  Write "the maintainer", and author commits as `spriteice <62098029+spriteice@users.noreply.github.com>`.
+  Write "the maintainer", and author commits as `Claude <noreply@anthropic.com>`, signed by the sandbox.
 - Reports on anything the game runs state numbers: commands, frames, faults, unmapped accesses,
   untranslated calls, and the diff against `data/baseline.json` and the regression gate.
 - Before anything heavy on the maintainer's PC, read and update `E:\Games\Ports\jsr\PC-IN-USE.md`.

@@ -219,6 +219,14 @@ class AuditCommits(unittest.TestCase):
         self.assertTrue(any("author is not" in item for item in found), found)
         self.assertTrue(any("committer is not" in item for item in found), found)
 
+    def test_the_old_identity_is_clean_only_up_to_the_legacy_tip(self):
+        root = self.repo(audit.LEGACY_IDENTITY, "Add notes")
+        tip = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True,
+                             text=True, check=True).stdout.strip()
+        self.assertEqual(audit.audit_commits(root, "HEAD", [], legacy_tip=tip), [])
+        found = audit.audit_commits(root, "HEAD", [], legacy_tip="0" * 40)
+        self.assertTrue(any("author is not" in item for item in found), found)
+
     def test_a_session_link_in_a_message_is_found(self):
         root = self.repo(audit.IDENTITY, "Add notes\n\nhttps://" + "claude" + ".ai/code/session_x")
         self.assertTrue(any("session link" in item for item in audit.audit_commits(root, "HEAD", [])))
@@ -238,9 +246,11 @@ class GitSetup(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.folder)
         self.repo = self.folder / "repo"
         subprocess.run(["git", "init", "-q", str(self.repo)], check=True)
+        self.global_config = self.folder / "gitconfig"
+        self.global_config.write_text("")
 
-    def setup(self, **env):
-        env = dict(os.environ, HOME=str(self.folder), **env)
+    def setup(self):
+        env = dict(os.environ, HOME=str(self.folder), GIT_CONFIG_GLOBAL=str(self.global_config))
         return subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(self.repo)],
                               capture_output=True, text=True, env=env)
 
@@ -248,44 +258,23 @@ class GitSetup(unittest.TestCase):
         return subprocess.run(["git", "-C", str(self.repo), "config", "--local", "--get", key],
                               capture_output=True, text=True).stdout.strip()
 
-    def test_it_sets_the_project_identity_and_says_unsigned(self):
-        env = {k: v for k, v in os.environ.items() if k != "JSR_SIGNING_KEY"}
-        result = subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(self.repo)],
-                                capture_output=True, text=True, env=dict(env, HOME=str(self.folder)))
+    def test_it_sets_the_project_identity(self):
+        result = self.setup()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(f"{self.config('user.name')} <{self.config('user.email')}>", audit.IDENTITY)
-        self.assertIn("not signed with the project key", result.stdout)
-        self.assertEqual(self.config("commit.gpgsign"), "")
 
-    def with_failing_ssh_keygen(self) -> str:
-        """A PATH whose ssh-keygen rejects every key, so the checks run without the real tool."""
-        stub = self.folder / "bin"
-        stub.mkdir()
-        (stub / "ssh-keygen").write_text("#!/bin/sh\nexit 1\n")
-        (stub / "ssh-keygen").chmod(0o755)
-        return f"{stub}{os.pathsep}{os.environ['PATH']}"
-
-    def test_a_bad_key_stops_with_a_message(self):
-        result = self.setup(JSR_SIGNING_KEY="bm90IGEga2V5", PATH=self.with_failing_ssh_keygen())  # "not a key"
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("isn't a valid SSH private key", result.stderr)
-        self.assertNotEqual(self.config("commit.gpgsign"), "true")
-
-    def test_a_key_that_isnt_base64_stops_with_a_message(self):
-        result = self.setup(JSR_SIGNING_KEY="!!not base64", PATH=self.with_failing_ssh_keygen())
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("isn't valid base64", result.stderr)
-
-    @unittest.skipUnless(shutil.which("ssh-keygen"), "needs ssh-keygen")
-    def test_a_signing_key_turns_signing_on(self):
-        key = self.folder / "k"
-        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", str(key)], check=True)
-        import base64
-        result = self.setup(JSR_SIGNING_KEY=base64.b64encode(key.read_bytes()).decode())
+    def test_it_keeps_the_sandboxs_signing_and_says_so(self):
+        self.global_config.write_text("[commit]\n\tgpgsign = true\n[user]\n\tsigningkey = /k.pub\n")
+        subprocess.run(["git", "-C", str(self.repo), "config", "user.signingkey", "/old"], check=True)
+        result = self.setup()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(self.config("commit.gpgsign"), "true")
-        self.assertEqual(self.config("gpg.format"), "ssh")
-        self.assertEqual(self.config("gpg.ssh.program"), "ssh-keygen")
+        self.assertIn("signed by the sandbox", result.stdout)
+        self.assertEqual(self.config("user.signingkey"), "")
+
+    def test_it_says_when_commits_wont_be_signed(self):
+        result = self.setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Unverified", result.stderr)
 
 
 class FetchDreamRecomp(unittest.TestCase):

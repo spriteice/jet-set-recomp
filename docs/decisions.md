@@ -40,5 +40,6 @@ JSR-PC project.
 | A release drops the interpreter fallback only once play logs show 0 untranslated calls | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
 | Shadows are drawn next, before other bugs | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
 | The Game Mode error dialog is checked as a step in the next Linux build | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
+| Commits are authored as `Claude <noreply@anthropic.com>`, signed by the sandbox, so GitHub shows them Verified; this replaces the signing key of 10:39, and earlier commits stay as `spriteice` | Maintainer | 5 Nov 11:22 |
 
 Not decided yet: version names, and whether other disc releases are ever added.
