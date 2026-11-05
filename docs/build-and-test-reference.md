@@ -3,9 +3,6 @@
 How builds of JSR-recomp are made, checked, delivered and reported. It's written by the maintainer
 ("I"), who never builds by hand and only runs what's delivered, for whoever makes them ("you").
 
-Steps marked *not yet run* were written from the first test boot's commands and haven't been run in
-this repo's layout. The first thread to run one removes the mark.
-
 ## Test devices
 
 - **Windows:** desktop PC, Windows 11, i7-10700K, 32 GB, RTX 2080 Ti.
@@ -37,7 +34,7 @@ the parts from the PC needs my permission. Everything from the disc stays in tha
 2. `scripts/01_fetch_dream_recomp.sh`.
 3. `python3 scripts/02_make_gdi.py CUE games/jgr/disc.gdi` and
    `python3 scripts/03_get_boot_file.py games/jgr/disc.gdi games/jgr/boot/1ST_READ.BIN`.
-4. `scripts/10_build_linux.sh` and `scripts/11_build_windows.sh` (*not yet run*). Each takes about 15
+4. `scripts/10_build_linux.sh` and `scripts/11_build_windows.sh`. Each takes about 15
    minutes: the translator re-emits 81 MB of C++ in one unit.
 
 Test builds keep the interpreter fallback (`DREAM_DEV_INTERPRETER=ON`), so a missed call shows up in the
@@ -92,7 +89,7 @@ must match or be explained. A clean run has 0 faults, 0 traps, 0 unmapped and 0 
 
 ## Delivery
 
-One folder per build, named `<date>-<commit>-<topic>`, made with `scripts/20_package.sh` (*not yet run*).
+One folder per build, named `<date>-<commit>-<topic>`, made with `scripts/20_package.sh`.
 It holds no disc file and no boot file; the player's setup makes those.
 
 - **Linux:** attached in the thread as a file, for the Ally X. I send `last-run.txt` back the same way.

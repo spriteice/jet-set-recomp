@@ -41,9 +41,12 @@ past the TIME OVER screen.
 
 In order. `release-prep/roadmap.md` in the shared folder has the milestones.
 
-1. **The repo plan.** `prepared\COMMIT-PLAN.md` on the PC. The maintainer chose a cloud thread, on 5 November.
+1. **The first build from this repo** (5 Nov): pin `6c098df68811`, built in the cloud with the repo's
+   scripts. Both 10-minute runs match `data/baseline.json`, and the gate against dream-recomp
+   `21315e8` is identical. Linux package in the shared folder's `builds/`; Windows package in
+   `Building\2026-11-05-e06a4f9-pin-2013fb7-windows`. Waiting on the maintainer's device tests.
 2. **The maintainer plays build 1:** `play.bat`, then send `last-run.txt`.
-3. **A Linux build for the Ally X.** Nothing has run on SteamOS.
+3. **SteamOS.** Nothing has run on the Ally X yet; the package above is the first to try.
 4. **Playing a stage:** a press script or recording that steers, and the gate's gameplay scenario pointed
    at it.
 5. **Modifier volumes (shadows):** a stencil pass in dream-recomp's Vulkan renderer. The game uses them
