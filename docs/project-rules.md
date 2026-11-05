@@ -85,7 +85,8 @@ one wins, and the report says what the lower one gave up. If the trade-off looks
 
 3. **Performant: full speed, with room to spare, on the slowest test device.**
    - The bar is the game's own frame rate, held steady on the Ally X in SteamOS Game Mode, not on the
-     desktop PC.
+     desktop PC. In a sandbox, the 10-minute runs' speed against `data/baseline.json` stands in for it
+     (`docs/build-and-test-reference.md`); report the Ally X itself as unverified until it's tested.
    - Choose the design that is cheap by construction: no per-frame allocation, file access or
      shader compiles on the game's hot path, and no work repeated that could be done once.
    - Measure before and after any change made for speed, with the same run and the numbers in the

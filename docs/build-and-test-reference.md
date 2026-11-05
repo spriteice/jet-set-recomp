@@ -105,6 +105,11 @@ Both headless, with `--rtc-seed 1 --max-seconds 600 --report FILE --write-hash F
 Compare both with `data/baseline.json`. Frames, faults, traps, unmapped accesses and untranslated calls
 must match or be explained. A clean run has 0 faults, 0 traps, 0 unmapped and 0 untranslated.
 
+Speed is the sandbox's stand-in for the performance bar: each run's real-time multiple, compared with
+`linux_sandbox_speed_x`. Sandboxes differ by about 6% on the same build (1.6x and 1.7x), so a drop of
+more than 15% is a finding that must be explained, and anything smaller is noise. It isn't the Ally X:
+only a device step there shows the real bar.
+
 `data/baseline.json` changes only with my approval.
 
 ## Delivery
