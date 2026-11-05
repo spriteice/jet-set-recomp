@@ -28,7 +28,8 @@ Ignored and made on the machine: `games/jgr/disc.gdi`, `games/jgr/boot/`, `build
 | What the console's hardware or BIOS does | dream-recomp `runtime/` |
 | Drawing, sound | dream-recomp `render/`, `audio/` |
 | Frame pacing, the window, input, anything about the host OS | dream-recomp `runtime/` and its SDL layer |
-| A function discovery missed, or a region copied elsewhere | `games/jgr/jgr.toml`, from `--suggest-config`, checked with the regression gate |
+| A function no discovery rule could find (reached only through a table read at run time), or a region copied elsewhere | `games/jgr/jgr.toml`, from `--suggest-config`, checked with the regression gate; never a mid-function address |
+| A function discovery's own rules missed (a scan window, a dropped switch table, an origin ranking: bug 11) | dream-recomp `translator/` analysis, with a unit test, then a pin move |
 | The game's own logic is the cause | A named hook here, with a comment saying why it isn't fixed at the source |
 | Building, packaging, checks | `scripts/`, `packaging/` |
 

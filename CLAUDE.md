@@ -34,7 +34,8 @@ The ones most easily broken:
 - Claude session links never go anywhere, commit messages included. Co-Authored-By lines are fine.
 - The maintainer's name never goes in a repo: not in files, docs, commit messages or author lines.
   Write "the maintainer", and author commits as `Claude <noreply@anthropic.com>`, signed by the sandbox.
-- Reports on anything the game runs state numbers: commands, frames, faults, unmapped accesses,
-  untranslated calls, and the diff against `data/baseline.json` and the regression gate.
+- Reports on anything the game runs state numbers: commands, frames, traps, unmapped accesses,
+  untranslated call targets (the run report's own lines), and the diff against `data/baseline.json`
+  and the regression gate.
 - Before anything heavy on the maintainer's PC, read and update `E:\Games\Ports\jsr\PC-IN-USE.md`.
   Never touch `E:\Games\Ports\jsr\PC`.

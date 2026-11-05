@@ -32,6 +32,7 @@ JSR-PC project.
 | Claude may open a game window on the PC at any time, noting it in `PC-IN-USE.md` | Maintainer (card) | 5 Nov, about 01:20 |
 | The repo is renamed `spriteice/jet-set-recomp`, shown as "Jet Set Recomp"; older rows keep the old name, JSR-recomp | Maintainer (card) | 5 Nov 09:57 |
 | Gate captures and write hashes are kept between sandboxes in the shared folder's `captures/` | Claude proposed; Maintainer (card) | 5 Nov 10:03 |
+| Every choice, approval or decision for the maintainer goes on a card, never only in plain text | Maintainer | 5 Nov 10:22 |
 | Code is built by three principles, in priority order: functional, robust, performant | Maintainer | 5 Nov 10:27 to 10:32 |
 | Commits are signed with a signing-only SSH key from the cloud environment, so GitHub shows them Verified | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
 | A pre-approved thread may move the pin to its own dream-recomp work when nothing measured changes | Claude proposed; Maintainer (card) | 5 Nov 10:39 |
@@ -42,15 +43,14 @@ JSR-PC project.
 | The Game Mode error dialog is checked as a step in the next Linux build | Claude proposed; Maintainer (card) | 5 Nov 11:11 |
 | Commits are authored as `Claude <noreply@anthropic.com>`, signed by the sandbox, so GitHub shows them Verified; this replaces the signing key of 10:39 | Maintainer | 5 Nov 11:22 |
 | Both repos' history is re-made as Claude, signed: every commit of this repo, and our four on dream-recomp, not phobos665's; old hashes are mapped in `docs/commit-map.md` | Claude proposed; Maintainer (card) | 5 Nov 11:26 |
-| Every choice, approval or decision for the maintainer goes on a card, never only in plain text | Maintainer | 5 Nov 10:22 |
-| Every test build has the files it needs to play out of the box: setup already run for the maintainer's disc before it's handed over | Maintainer | 5 Nov 12:13 |
+| If Ubuntu's snapshot server is ever needed, its packages are pushed to our GitHub first, and every local build, sandbox and GitHub CI installs only from there; the server is used only to update the copy | Maintainer | 5 Nov 11:55 to 11:56 |
+| Every test build has the files it needs to play out of the box: setup already run for the maintainer's disc before it's handed over. For the Ally X, amended at 13:34: the maintainer copies the disc in with `copy-disc.sh` | Maintainer | 5 Nov 12:13 |
 | A ready-to-play Ally X build is made on the PC, where the disc is, with the disc's tracks inside, and the maintainer copies it to the Ally X | Claude proposed; Maintainer (card) | 5 Nov 12:23 |
 | The save bundled in a test build is the one furthest through the game, not the newest | Maintainer | 5 Nov 12:24 |
-| The Ally X build carries everything but the game files, which are too large: it's delivered with the save, the maintainer copies the game files to the Ally X themselves, and the package supplies a script that puts them in place. This replaces the PC-made archive of 12:23 | Maintainer | 5 Nov 13:34 |
+| A full coverage pass ("map everything first") comes before any renderer work, and the renderer threads pause | Maintainer (card) | 5 Nov 12:36 |
 | Our dream-recomp commits write an ADR in its `docs/decisions/` for a decision that changes a model, and skip its `WP x.y` references | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
 | The two `--vmu` baseline runs are made on the PC's Windows build; their Linux sandbox speed is recorded at the next pin move | Claude proposed; Maintainer (card) | 5 Nov 12:43 |
-| If Ubuntu's snapshot server is ever needed, its packages are pushed to our GitHub first, and every local build, sandbox and GitHub CI installs only from there; the server is used only to update the copy | Maintainer | 5 Nov 11:55 to 11:56 |
-| A full coverage pass ("map everything first") comes before any renderer work, and the renderer threads pause | Maintainer (card) | 5 Nov 12:36 |
 | The work runs in six phases, in order: map the code; tell translation faults from renderer faults; runtime and platforms; the renderer, one hardware feature at a time, depth before shadows; the whole game; then speed, OpenGL and release. Recorded play-throughs move into the first phase. This replaces "shadows next" of 11:11 | Claude proposed; Maintainer (card) | 5 Nov 12:49 |
+| The Ally X build carries everything but the game files, which are too large: it's delivered with the save, the maintainer copies the game files to the Ally X themselves, and the package supplies a script that puts them in place. This replaces the PC-made archive of 12:23 | Maintainer | 5 Nov 13:34 |
 
 Not decided yet: version names, and whether other disc releases are ever added.

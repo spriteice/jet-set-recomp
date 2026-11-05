@@ -36,7 +36,9 @@ Decide this first.
    - dream-recomp's translator, for how SH-4 code is translated;
    - dream-recomp's runtime, for what the console's hardware and BIOS do;
    - dream-recomp's renderer and audio, for drawing and sound;
-   - `games/jgr/jgr.toml`, for what discovery missed (seeds and relocations from `--suggest-config`);
+   - `games/jgr/jgr.toml`, for what no discovery rule could find (seeds for a function reached only
+     through a table read at run time, relocations for a copied region, both from `--suggest-config`).
+     A miss that discovery's own rules caused is a translator fix, as bug 11's three were;
    - a named hook in this repo, for the game's own logic.
 
    Never make up in one layer for a bug in another.

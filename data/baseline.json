@@ -1,5 +1,5 @@
 {
-  "_about": "The numbers a run is compared with (docs/build-and-test-reference.md). Changes only with the maintainer's approval. Runs are headless, --rtc-seed 1, --max-seconds 600, on the final config. Counts only. The *_vmu runs attach a new memory card (a file that doesn't exist yet, so the program makes a blank, formatted one, as a player's first run does); the others attach none. linux_sandbox_speed_x is null where no Linux sandbox has made the run yet.",
+  "_about": "The numbers a run is compared with (docs/build-and-test-reference.md). Changes only with the maintainer's approval. Runs are headless, --rtc-seed 1, --max-seconds 600, on the final config. Counts only. The *_vmu runs attach a new memory card (a file that doesn't exist yet, so the program makes a blank, formatted one, as a player's first run does); the others attach none. linux_sandbox_speed_x is null where no Linux sandbox has made the run yet. discovery.bytes_total is the span of the emitted functions, not the boot image (3,075,648 bytes): the coverage pass measures against the image.",
   "disc": "Jet Grind Radio (USA), MK-51058 V1.005",
   "discovery": {
     "functions": 12259,

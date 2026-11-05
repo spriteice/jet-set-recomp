@@ -19,7 +19,8 @@ that is.
 1. **Backlog closed:** each item done, or moved with my OK.
 2. **Switches retired,** and nothing left on from debugging. The README's build drops the interpreter
    fallback (`DREAM_DEV_INTERPRETER=OFF`) only if my play logs since the last change show 0
-   untranslated calls; otherwise it keeps it, and the release text says so.
+   untranslated calls; otherwise it keeps it, and the release text says that the build is dream-recomp's
+   development configuration, which its own releases never ship (its `CONTRIBUTING.md`).
 3. **Main ready:** latest `origin/main`, nothing unpushed from elsewhere, a clean tree.
 4. **Known bugs current,** each open bug marked critical or not. A critical one stops the release here.
 5. **Rules review** of everything since the last release: the audit, session links in commit messages,
@@ -27,7 +28,7 @@ that is.
    alike, regression tests, and docs that changed with their code. Fix findings now, one commit each.
 6. **Docs:** the README, `docs/`, `packaging/README.txt`, the changelog, and the release text.
 7. **Build from a clean checkout,** following the README's own steps, for both platforms. Run the gate
-   and the two 10-minute runs against `data/baseline.json`.
+   and every 10-minute run in `data/baseline.json` against it.
 8. **Test those builds** on the Ally X (Desktop and Game Mode) and the Windows PC, including a fresh setup
    and an upgrade over the last release's saves. If anything fails: fix, recheck, rebuild.
 9. **Go-ahead:** I approve publishing, with every step passed and no open critical bug.

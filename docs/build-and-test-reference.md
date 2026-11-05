@@ -84,7 +84,7 @@ toolchain and SDL3 builds of `scripts/09_setup_sandbox.sh`.
 - the Windows cross-build (`docs/dev-setup.md` there).
 
 **For anything the game runs:** the regression gate against the build before the change, and for a pin
-move the two 10-minute runs too.
+move every 10-minute run in `data/baseline.json` too, the card runs included.
 
 ## The regression gate
 
@@ -104,10 +104,12 @@ The gate measures guest writes only. It doesn't see drawing, sound or pacing, so
 unit test on a synthetic TA list, with no game art), and its report says the gate doesn't cover it.
 Every drawing feature that's fixed or added gets one such test, shadows included. The gate and the
 baseline cover the attract loop and the first 40 s of gameplay only, and a report says so when the
-change reaches further. A 5-minute play-through, recorded by hand with `--record-input`, is to join
-them as a third scenario (`docs/status.md`, "What's open").
+change reaches further. Play-throughs recorded by hand with `--record-input` (two at least, 5 minutes
+or more each) are to join them as scenarios (`docs/status.md`, phase 1).
 
-A changed hash is a fact, and whether it matters is a judgement: explain it in the report. Captures are
+A changed hash is a fact, and whether it matters is a judgement: explain it in the report, and the
+judgement is mine. A pin move or a phase exit whose gate shows a changed hash waits for my acceptance of
+the explanation, however good it is (a pre-approved thread stops there, section 5). Captures are
 keyed to one disc, build and platform: compare only captures made the same way, which is what the
 manifest below records. A Windows or Wine capture is never compared with a Linux one.
 
@@ -131,9 +133,10 @@ All headless, with `--rtc-seed 1 --max-seconds 600 --report FILE --write-hash FI
   cause B in `known-bugs.md`) that go once the translator fix is pinned.
 
 Compare each with its run in `data/baseline.json` (`no_input`, `presses`, `no_input_vmu`, `presses_vmu`).
-Frames, faults, traps, unmapped accesses and untranslated calls must match or be explained. A clean run
-has 0 faults, 0 traps, 0 unmapped, and the untranslated count and addresses its baseline run records: 0
-without a card.
+Frames, traps, unmapped accesses and untranslated call targets must match or be explained; those are
+the report's own lines, and it has no "faults" line, so a report never states a faults count it didn't
+read. A clean run has 0 traps, 0 unmapped, and the untranslated count and addresses its baseline run
+records: 0 without a card.
 
 Speed is the sandbox's stand-in for the performance bar: each run's real-time multiple, compared with
 `linux_sandbox_speed_x`. A run whose entry has `null` there was first made on the Windows PC (the card
@@ -176,10 +179,13 @@ Before a build is delivered, test the package as delivered, not only the program
 1. Unpack a copy into an empty folder and run its own `setup.sh` (or `setup.bat`) with the disc's
    `.cue`. Setup writes disc files, so a Linux package is sent from the untouched original. A Linux
    package's `copy-disc.sh` is covered by the unit tests with a made-up disc, and by the Ally X steps.
-2. From that folder, run the program headless for 10 s with the launcher's files:
-   `./jgr_boot --config jgr.toml --vmu vmu-a1.bin --max-seconds 10 --report logs/smoke.txt`
-   (`jgr_boot.exe` on Windows).
-3. Confirm the log exists and has 0 faults, 0 traps and 0 unmapped, and report its counts. Compare its
+2. From that folder, make `logs/` (without it the program writes no report and still exits 0,
+   `known-bugs.md` 15), then run the program headless for 10 s with the launcher's files and a new card:
+   `./jgr_boot --config jgr.toml --vmu logs/smoke-card.bin --max-seconds 10 --report logs/smoke.txt`
+   (`jgr_boot.exe` on Windows). The card is a file that doesn't exist yet, as in the baseline's card
+   runs, so the comparison below holds; the maintainer's save is never run in a test, and a package
+   that carries it is smoked before the save goes in or on a copy without it.
+3. Confirm the log exists and has 0 traps and 0 unmapped, and report its counts. Compare its
    untranslated call targets with the baseline's card runs (`no_input_vmu`): the same addresses are
    expected, and a new one is a finding.
 
@@ -208,11 +214,11 @@ One platform at a time, and after any fix, rerun the passed steps it could affec
 
 ## Reports
 
-Every report on something the game runs states the commands run, the counts (frames, faults, unmapped
-accesses, untranslated calls), and the diff against `data/baseline.json` and the gate. A change report
-also has: the root cause and its model, the code's history, files touched, the regression test and that
-it fails without the fix, each hook's reason, docs updated, platforms built or verified, what to test,
-and what's unverified.
+Every report on something the game runs states the commands run, the counts as the report prints them
+(frames, traps, unmapped accesses, untranslated call targets), and the diff against `data/baseline.json`
+and the gate. A change report also has: the root cause and its model, the code's history, files
+touched, the regression test and that it fails without the fix, each hook's reason, docs updated,
+platforms built or verified, what to test, and what's unverified.
 
 ## Review pack
 

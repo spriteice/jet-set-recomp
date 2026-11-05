@@ -21,13 +21,13 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 - **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, two wrong
   textures, sparks that don't follow the skates, and pacing while unfocused. `known-bugs.md` in the
   shared folder lists them.
-- **SteamOS hasn't run anything yet.** Four Linux packages are in the shared folder's `builds/`: the
-  current one is `2026-11-05-de56e83-linux`, and the two `depthfix-test` ones carry an unpushed
-  dream-recomp change. None has `copy-disc.sh` yet: the next Linux package is the first with it, and
-  it goes to the Ally X with the maintainer's save, without the game files, which the maintainer
-  copies and puts in place with that script (`docs/build-and-test-reference.md`, Delivery). The 1.2 GB
-  `Building\2026-11-05-de56e83-linux-ready.tar` on the PC, made with the disc inside before the rule
-  changed, isn't the route any more.
+- **SteamOS hasn't run anything yet.** Five Linux packages are in the shared folder's `builds/`: the
+  current one is `2026-11-05-de56e83-linux`, two older ones named with old hashes, and the two
+  `depthfix-test` ones, which carry an unpushed dream-recomp change. None has `copy-disc.sh` yet: the
+  next Linux package is the first with it, and it goes to the Ally X with the maintainer's save, without
+  the game files, which the maintainer copies and puts in place with that script
+  (`docs/build-and-test-reference.md`, Delivery). The 1.2 GB `Building\2026-11-05-de56e83-linux-ready.tar`
+  on the PC, made with the disc inside before the rule changed, isn't the route any more.
 
 The two tables and notes below are the first Windows check, made on build 1 before this repo existed.
 
@@ -67,18 +67,22 @@ puts each milestone in its phase.
 1. **Map the code (now):** a full coverage pass, before any renderer work.
    - Entry: bug 11's three dream-recomp fixes (`known-bugs.md`, 11) rechecked, committed and pinned.
    - Work: a coverage report from the translator over the whole image, with every byte classed as
-     function code, data or literal pool, switch table, padding, or unknown (the baseline leaves
-     230,602 of 1,447,388 bytes undecoded), and every indirect jump and call site (`jmp`, `braf`,
-     `jsr @Rn`, `bsrf`) classed as a recovered switch, a tail call or a resolved call. Discovery's
-     200-instruction window fixed in the translator, with a test. Config seeds only where measured.
+     function code, data or literal pool, switch table, padding, or unknown. The image is 3,075,648
+     bytes, and discovery at the pin classes 1,216,786 of them as code (39.6%); the baseline's
+     `bytes_total`, 1,447,388, is the span of the emitted functions, not the image
+     (`bug11/RECHECK-HANDOFF.md`, finding D), so the pass measures against the image. Every indirect
+     jump and call site (`jmp`, `braf`, `jsr @Rn`, `bsrf`) classed as a recovered switch, a tail call
+     or a resolved call. A miss that discovery's own rules caused is a translator fix with a test, as
+     bug 11's three were; config seeds only for what no rule could find, and only where measured.
      The run log's own bugs fixed first, because the pass measures with it (`known-bugs.md`, 12 and
      15). The maintainer records at least two play-throughs with `--record-input` (the tutorial and the
-     first stage, 5 minutes or more), added to the gate as its third scenario and to
+     first stage, 5 minutes or more), added to the gate as new scenarios and to
      `data/baseline.json`.
    - Exit: every unknown range explained or translated, and listed with its size; no indirect jump
      site unclassified; both recorded runs show 0 untranslated calls, 0 traps and 0 unmapped
-     accesses; the gate and both 10-minute runs match `data/baseline.json`, or the maintainer
-     approves the new counts.
+     accesses; every 10-minute run in `data/baseline.json` matches it, or the maintainer approves
+     the new counts; the gate's counters are equal, and its hash change (the bug 11 patches change
+     the write hash from frame 83 on) is explained and accepted by the maintainer.
    - If the pass needs more than about ten re-emits, splitting the generated unit (phase 6) moves
      here. It's a restructure with no change in behaviour, shown by an identical gate.
 2. **Tell translation faults from renderer faults.**
