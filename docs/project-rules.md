@@ -3,13 +3,13 @@
 How a change to Jet Set Recomp is placed, written, checked and proposed. It's written by the maintainer
 ("I") for whoever makes the change ("you"), and goes with `docs/project-instructions.md`, the short
 rules, which win over this file only by stopping the work: if they disagree, stop and tell me.
-`docs/build-and-test-reference.md` covers building, testing and reports. Adapted from the JSRF-PC
-rules pack of 4 November 2026.
+`docs/build-and-test-reference.md` covers building, testing and reports. Adapted from the JSR-PC
+rules pack of 4 November 2026, the project this work ran inside before 5 November.
 
 ## Before every commit
 
 Do all six, in one review pack (`docs/build-and-test-reference.md`, "Review pack"), then wait for my
-approval. A pre-approved thread doesn't wait (`docs/project-instructions.md`, section 5).
+approval, asked for on a card. A pre-approved thread doesn't wait (`docs/project-instructions.md`, section 5).
 
 1. Run `git status`, `git diff --cached --stat` and `python3 scripts/audit_repo.py . --commits HEAD`,
    and confirm that nothing on the "never in the repo" list is staged. If `.gitignore` doesn't cover it,
@@ -147,15 +147,17 @@ Stop and tell me why instead.
 
 Several items can run at once, each in its own thread, if they don't change the same code. Commits
 still go onto `main` one at a time, each from the latest `origin/main`. Fetch just before pushing, and
-don't push while `release-prep/RELEASE-IN-PROGRESS.md` exists. If `origin/main` moved, rebase and rerun
-the repo checks; rerun the builds and the gate too if the commits in between touched code, config or
-the pin.
+don't push while `release-prep/RELEASE-IN-PROGRESS.md` exists. If `origin/main` moved, ask before rebasing
+(section 2 of the instructions; a pre-approved thread moves its own commits itself, section 5), then
+rerun the repo checks, and the builds and the gate too if the commits in between touched code, config
+or the pin.
 
 If a rule conflicts with the task, or you can't solve it within the rules, stop and ask. Don't quietly
 bend the rule.
 
-"Stop and ask", here and everywhere in the rules, means: stop that step, ask once, with the options
-and your recommendation, and carry on with any work that doesn't depend on the answer. The maintainer
+"Stop and ask", here and everywhere in the rules, means: stop that step, ask once, on a card with the
+options and your recommendation (every choice, approval or decision for me goes on a card, never only
+in plain text), and carry on with any work that doesn't depend on the answer. The maintainer
 may be away for hours, so don't leave the whole thread idle for one question.
 
 ## What a pre-approval still stops for

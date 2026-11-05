@@ -72,7 +72,9 @@ and it made Windows drift from Linux at frame 51, so a MinGW build without FMA d
 `python3 -m unittest discover -s tests` passes, and `bash -n` and `shellcheck` pass on every script. The
 audit checks names only with a denylist: in a sandbox, write the maintainer's name to
 `.git/info/audit-denylist` (never a tracked file); CI reads it from the `AUDIT_DENYLIST` secret.
-`.github/workflows/ci.yml` runs the same on GitHub, which has no disc.
+`.github/workflows/ci.yml` runs the same on GitHub, which has no disc. A thread that changes only docs
+or scripts needs shellcheck alone (`apt-get install shellcheck`, which section 4 allows), not the
+toolchain and SDL3 builds of `scripts/09_setup_sandbox.sh`.
 
 **In dream-recomp:** on the exact tree, on Linux:
 
@@ -136,9 +138,15 @@ only a device step there shows the real bar.
 
 ## Delivery
 
-One folder per build, named `<date>-<commit>-<topic>`, made new with `scripts/20_package.sh`, which
-refuses a folder that isn't empty.
-It holds no disc file and no boot file; the player's setup makes those.
+One folder per build, named `<date>-<commit>-pin-<pin>-<topic>`, where `<pin>` is the first 7 digits of
+the dream-recomp commit it was built on, so a build on an unpushed dream-recomp change says which. It's
+made new with `scripts/20_package.sh`, which refuses a folder that isn't empty, and holds no disc file
+and no boot file; setup makes those from the disc.
+
+A test build plays out of the box (the maintainer, 5 Nov): what the maintainer receives has had setup
+run for their own disc, with their memory card carried over, so `play.bat` or `play.sh` is the first
+and only step. On the PC that happens in `Building\` through Remote Control; how a ready folder
+reaches the Ally X is still being worked out.
 Its launchers write a run log for every run, `logs/run-<start time>.txt`, and never overwrite one.
 
 - **Linux:** attached in the thread as a file, for the Ally X. I send its run logs back the same way.
@@ -154,6 +162,10 @@ Before a build is delivered, test the package as delivered, not only the program
    `./jgr_boot --config jgr.toml --vmu vmu-a1.bin --max-seconds 10 --report logs/smoke.txt`
    (`jgr_boot.exe` on Windows).
 3. Confirm the log exists and has 0 faults, 0 traps and 0 unmapped, and report its counts.
+
+Step 2 runs the program itself, not `play.sh` or `play.bat`, which force `--window`. The launchers are
+covered by the unit tests, with a stand-in program, and by the device steps, so a sandbox report
+doesn't call them tested end to end.
 
 On the Ally X, setup runs in Desktop Mode, from a terminal (Konsole). Game Mode has no terminal: there,
 the game starts from `play.sh`, added to Steam as a non-Steam game. `TESTING.md` steps say which mode.
