@@ -20,7 +20,7 @@ fail() {
 # The game can't start without the files setup makes from your disc, so say so instead of failing silently.
 for need in disc.gdi boot/1ST_READ.BIN; do
     if [ ! -f "$need" ]; then
-        fail "Missing $need. Run setup first (on SteamOS, in Desktop Mode): ./setup.sh \"DISC_FOLDER/Jet Grind Radio (USA).cue\""
+        fail "Missing $need. Run setup first (on SteamOS, in Desktop Mode): ./copy-disc.sh \"STICK/Jet Grind Radio (USA).cue\" copies your disc into this folder, or ./setup.sh \"DISC_FOLDER/Jet Grind Radio (USA).cue\" reads it where it is."
         exit 1
     fi
 done

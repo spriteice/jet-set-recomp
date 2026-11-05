@@ -174,8 +174,18 @@ class Package(unittest.TestCase):
         result = self.play()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Run setup first", result.stderr)
+        self.assertIn("copy-disc.sh", result.stderr)  # the route on a handheld, where the disc is on a stick
         self.assertIn("Run setup first", (self.out / "logs/launcher.txt").read_text())
         self.assertFalse((self.out / "ran.txt").exists())
+
+    def test_setup_bat_reads_the_cue_path_before_moving_into_its_folder(self):
+        # There's no Windows here to run it: the line order is what makes a relative path mean what it did
+        # where it was typed, as setup.sh does.
+        lines = (ROOT / "packaging/setup.bat").read_text().splitlines()
+        read = next(i for i, line in enumerate(lines) if line == 'set "cue=%~f1"')
+        moved = next(i for i, line in enumerate(lines) if line.startswith("cd /d "))
+        self.assertLess(read, moved)
+        self.assertIn('02_make_gdi.py "%cue%"', "\n".join(lines))
 
     def test_play_runs_with_a_timestamped_log_after_setup(self):
         (self.out / "disc.gdi").write_text("")
@@ -217,8 +227,9 @@ class CopyDisc(unittest.TestCase):
             "out.parent.mkdir(exist_ok=True)\n"
             "out.write_text(sys.argv[1])\n")
 
-    def copy(self, cue: str):
-        return subprocess.run(["sh", str(self.out / "copy-disc.sh"), cue], capture_output=True, text=True)
+    def copy(self, cue: str, cwd: pathlib.Path | None = None, env: dict[str, str] | None = None):
+        return subprocess.run(["sh", str(self.out / "copy-disc.sh"), cue], capture_output=True, text=True,
+                              cwd=cwd, env=env)
 
     def test_the_disc_is_copied_in_and_the_gdi_points_inside_the_folder(self):
         result = self.copy(str(self.cue))
@@ -247,11 +258,46 @@ class CopyDisc(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("t3.bin", result.stderr)
         self.assertFalse((self.out / "disc.gdi").exists())
+        # The copies made before the missing track are removed too.
+        self.assertEqual(sorted(path.name for path in (self.out / "disc").iterdir()), [])
+
+    def test_a_copy_that_fails_part_way_leaves_nothing_behind(self):
+        # A full disk fails cp part-way through a track. This cp stand-in does that on the second track.
+        bin_dir = self.folder / "bin"
+        bin_dir.mkdir()
+        (bin_dir / "cp").write_text(
+            "#!/bin/sh\n"
+            'case "$2" in *t2.bin) head -c 16 "$1" > "$2"; echo "cp: No space left on device" >&2; exit 1 ;; esac\n'
+            f'exec "{shutil.which("cp")}" "$@"\n')
+        (bin_dir / "cp").chmod(0o755)
+        path = f"{bin_dir}{os.pathsep}{os.environ['PATH']}"
+        result = self.copy(str(self.cue), env=dict(os.environ, PATH=path))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("Couldn't copy t2.bin", result.stderr)
+        self.assertIn("removed", result.stderr)
+        self.assertEqual(sorted(path.name for path in (self.out / "disc").iterdir()), [])
+        self.assertFalse((self.out / "disc.gdi").exists())
 
     def test_a_missing_cue_is_named(self):
         result = self.copy(str(self.stick / "none.cue"))
         self.assertEqual(result.returncode, 1)
         self.assertIn("No .cue at", result.stderr)
+        self.assertFalse((self.out / "disc").exists())
+
+    def test_a_relative_cue_path_means_what_it_did_where_it_was_typed(self):
+        # The scripts cd into their folder first; a relative path from another folder has to survive that.
+        relative = str(self.cue.relative_to(self.folder))
+        result = self.copy(relative, cwd=self.folder)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('"disc/t1.bin"', (self.out / "disc.gdi").read_text())
+
+    def test_setup_takes_a_relative_cue_path_from_another_folder_too(self):
+        relative = str(self.cue.relative_to(self.folder))
+        result = subprocess.run(["sh", str(self.out / "setup.sh"), relative], capture_output=True, text=True,
+                                cwd=self.folder)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        gdi = (self.out / "disc.gdi").read_text()
+        self.assertIn(str(self.stick / "t1.bin"), gdi)  # the disc stays where it is, so the path is absolute
         self.assertFalse((self.out / "disc").exists())
 
 

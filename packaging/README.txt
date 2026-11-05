@@ -31,9 +31,9 @@ go. (Setup writes paths inside the folder too whenever the disc is already under
 Playing
 -------
 Run play.bat on Windows or play.sh on Linux. Until setup has run, they say what's missing and
-stop. On a Steam Deck or another SteamOS device, run setup once in Desktop Mode, then add play.sh
-to Steam as a non-Steam game to play in Game Mode. If the game can't start there, the reason is in
-logs/launcher.txt. A controller is best: the game steers with the stick.
+stop. On a Steam Deck or another SteamOS device, run copy-disc.sh (or setup.sh) once in Desktop
+Mode, then add play.sh to Steam as a non-Steam game to play in Game Mode. If the game can't start
+there, the reason is in logs/launcher.txt. A controller is best: the game steers with the stick.
 
 Keyboard: arrow keys are the d-pad, Z X A S are A B X Y, Return is Start, Q and W are the triggers.
 F1 opens the binding screen (a pad's select button does too), F10 shows the frame-rate counter, F12
