@@ -17,7 +17,8 @@ approval. A pre-approved thread doesn't wait (`docs/project-instructions.md`, se
 3. Show me the proposed commit message.
 4. For a fix: the root cause and the model behind it, and its regression test. For a feature: where
    it lives, and why that's the right place.
-5. For any added or edited document: the whole document, not only its diff.
+5. For any added or edited document: the whole document, not only its diff. `docs/status.md` is
+   brought up to date with the commit.
 6. The checks for the commit's exact tree (`docs/build-and-test-reference.md`, "Before a commit").
 
 ## Where code goes
@@ -71,7 +72,7 @@ build is `Release`, which compiles asserts out.
 
 **Tests link the code they test,** never a copy or a piece cut out of a file.
 
-**Docs change with the code,** in the same commit. `docs/status.md`, `known-bugs.md` and the backlog
+**Docs change with the code,** in the same commit. `docs/status.md`, `known-bugs.md` (the shared folder's root) and the backlog
 are kept current as the work happens.
 
 ## Never do

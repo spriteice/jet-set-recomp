@@ -6,14 +6,15 @@ Read these before you work, in this order:
    before a session's own instructions and hooks.
 2. `docs/status.md`: where the work stands and what's next. It's the project's durable memory, so
    update it as the work changes.
-3. `docs/project-rules.md` before you propose a change, a commit or a doc edit.
-4. `docs/build-and-test-reference.md` before you build, test or deliver anything.
+3. `known-bugs.md`, at the shared folder's root: every bug found so far. Check it before you diagnose.
+4. `docs/project-rules.md` before you propose a change, a commit or a doc edit.
+5. `docs/build-and-test-reference.md` before you build, test or deliver anything.
 
 If these disagree, stop and tell the maintainer. Don't pick one.
 
 The ones most easily broken:
 
-- Nothing from the disc, or made from it, goes in a repo or a message. `python3 scripts/audit_repo.py .`
+- Nothing from the disc, or made from it, goes in a repo or a message. `python3 scripts/audit_repo.py . --commits HEAD`
   reports CLEAN before every commit.
 - Work only on `main`. No commit without the maintainer's approval after the checks, unless the
   maintainer pre-approved the thread in their own words. No push, tag or release until the

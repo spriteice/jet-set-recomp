@@ -1,16 +1,24 @@
 # Status
 
-The project's durable notes: where the work stands and what's next. Keep this current. Written 5
+The project's durable notes: where the work stands and what's next. Keep this current. Updated 5
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
 ## Where it stands
 
-- **The translated game boots on Windows hardware.** Test build 1 (dream-recomp `51ca2766d2eb` with
-  patches 01 to 03) ran on the Windows 11 PC on 5 November. Nobody has played it by hand yet.
-- **It matches the cloud's Linux runs on every counter compared** (below), with the same config.
-- **The repos are unchanged:** `spriteice/dream-recomp` `main` is at `51ca2766d2eb`, and
-  `spriteice/jet-set-recomp` was empty as this was written.
+- **Both repos are set up.** `spriteice/dream-recomp` carries our four fixes on `main`, and this repo
+  builds on it at the pin in `data/dream-recomp.pin` (`6c098df`). The first build from this repo matches
+  `data/baseline.json` on both 10-minute runs.
+- **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7` on
+  the PC on 5 November: music, saving, loading, the tutorial and entering the first level work. Its run
+  log showed 12,747 frames over 212 s at 1.0x, 0 traps, 0 unmapped, and 256 untranslated call targets
+  that ran interpreted (`known-bugs.md`, 11).
+- **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, two wrong
+  textures, sparks that don't follow the skates, and pacing while unfocused. `known-bugs.md` in the
+  shared folder lists them.
+- **SteamOS hasn't run anything yet.** The first Linux package is in the shared folder's `builds/`.
+
+The two tables and notes below are the first Windows check, made on build 1 before this repo existed.
 
 ## Windows runs, 5 November 2026
 
@@ -41,12 +49,11 @@ past the TIME OVER screen.
 
 In order. `release-prep/roadmap.md` in the shared folder has the milestones.
 
-1. **The first build from this repo** (5 Nov): pin `6c098df68811`, built in the cloud with the repo's
-   scripts. Both 10-minute runs match `data/baseline.json`, and the gate against dream-recomp
-   `21315e8` is identical. Linux package in the shared folder's `builds/`; Windows package in
-   `Building\2026-11-05-e06a4f9-pin-2013fb7-windows`. Waiting on the maintainer's device tests.
-2. **The maintainer plays build 1:** `play.bat`, then send the run logs from `logs\`.
-3. **SteamOS.** Nothing has run on the Ally X yet; the package above is the first to try.
+1. **Untranslated calls from play:** feed the played run's 256 targets to `--suggest-config`, and
+   check each new entry with the gate (`known-bugs.md`, 11).
+2. **SteamOS.** Nothing has run on the Ally X yet; the package in `builds/` is the first to try.
+3. **Renderer bugs** (`known-bugs.md`, 5 to 8): each needs its own test, because the gate doesn't see
+   drawing.
 4. **Playing a stage:** a press script or recording that steers, and the gate's gameplay scenario pointed
    at it.
 5. **Modifier volumes (shadows):** a stencil pass in dream-recomp's Vulkan renderer. The game uses them
