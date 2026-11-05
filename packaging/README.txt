@@ -8,12 +8,13 @@ Grind Radio; bring your own disc.
 
 Setting up, once, with Python 3 and your own Jet Grind Radio (USA), MK-51058 V1.005
 -----------------------------------------------------------------------------------
-From this folder, naming your disc's .cue:
+Run setup once, naming your disc's .cue:
 
-  python tools/02_make_gdi.py "DISC_FOLDER/Jet Grind Radio (USA).cue" disc.gdi
-  python tools/03_get_boot_file.py disc.gdi boot/1ST_READ.BIN
+  setup.bat "DISC_FOLDER\Jet Grind Radio (USA).cue"        (Windows)
+  ./setup.sh "DISC_FOLDER/Jet Grind Radio (USA).cue"        (Linux)
 
-If the disc moves, run the first command again.
+It writes disc.gdi and boot/1ST_READ.BIN here, and checks the boot file against the hash list. If the
+disc moves, run it again.
 
 Playing
 -------

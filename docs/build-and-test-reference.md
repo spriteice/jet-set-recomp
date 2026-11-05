@@ -95,8 +95,9 @@ Its launchers write a run log for every run, `logs/run-<start time>.txt`, and ne
 
 - **Linux:** attached in the thread as a file, for the Ally X. I send its run logs back the same way.
 - **Windows:** stays on my PC in `Building\`, and you read its run logs there. If it's cross-built in
-  the cloud, it's copied over once the PC is free. Before I test, run `jgr_boot.exe --help` as a start
-  check and report the exit code.
+  the cloud, it's copied over once the PC is free. Before I test, set the folder up for the disc with
+  `setup.bat` (through Remote Control), run `jgr_boot.exe --help` as a start check, and report the
+  exit code. A folder without `disc.gdi` and `boot\1ST_READ.BIN` quits before it writes a log.
 - **Never published,** in any form, and no build goes to anyone else.
 
 Check each package's SHA-256 after every copy. With each build, write `TESTING.md`:

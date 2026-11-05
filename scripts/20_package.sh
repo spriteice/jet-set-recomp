@@ -18,12 +18,12 @@ case "$platform" in
     linux)
         cp "$root/build/games/jgr/jgr_boot" "$out/"
         cp -P "${DREAM_LINUX_PREFIX:-$HOME/linux/prefix}"/lib/libSDL3.so* "$out/"
-        cp "$root/packaging/play.sh" "$out/"
+        cp "$root/packaging/play.sh" "$root/packaging/setup.sh" "$out/"
         ;;
     windows)
         cp "$root/build-win/games/jgr/jgr_boot.exe" "$out/"
         cp "${DREAM_WIN_PREFIX:-$HOME/win/prefix}/bin/SDL3.dll" "$out/"
-        cp "$root/packaging/play.bat" "$out/"
+        cp "$root/packaging/play.bat" "$root/packaging/setup.bat" "$out/"
         ;;
     *) echo "usage: $0 linux|windows OUT_FOLDER" >&2; exit 2 ;;
 esac
