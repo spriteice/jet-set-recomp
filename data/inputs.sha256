@@ -1,0 +1,10 @@
+# Jet Grind Radio (USA), MK-51058 V1.005, 2000-10-02. Hashes only; nothing from the disc is committed.
+# SHA-256 taken on Aden's PC on 2026-11-05. The SHA-1 values there matched the ones from the first
+# test boot: Track 1 0b9938e8d9af00f65831d4809bb9bfaf271df5e8, Track 2
+# a3705cb0ce53c7adf906c5af76887406984de6a9, Track 3 f9ed8434bc1570fd785d6f4900752adc91d39dd9,
+# cue b5f4f2f5ac7fa617520a43327a9accc30a39b37a. Not checked against Redump's database.
+1a623e77bd687b4d1cd3068d44896ee966456d9c071957925d65c1f0cd339282  Jet Grind Radio (USA) (Track 1).bin
+c021c659506fd32bd6736f5dcc3fba27450e23a18e64d38aae314ad9c3e9cfdc  Jet Grind Radio (USA) (Track 2).bin
+e8bb54483774d2c79d14a43a191485c7d3ab1119e0029dd78a97513887c0c8a5  Jet Grind Radio (USA) (Track 3).bin
+30c89fbae5f228c8bc3a5f3efd5b8dc20e814a50a8b799666d2a2b4d97b26141  Jet Grind Radio (USA).cue
+8b294765225fc32020dd59010464a730b710d0bd79f69c79f16218cc4feac6a6  1ST_READ.BIN
