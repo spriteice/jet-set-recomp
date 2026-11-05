@@ -5,7 +5,8 @@
 
 Looks at what git tracks, plus what's staged, or at every file when ROOT isn't a git checkout. With
 --commits, also checks every commit reachable from REV (HEAD, or origin/main..HEAD): its author and
-committer must be the project's identity, and its message must hold no session link.
+committer must be the project's identity, it must carry a signature (GitHub shows a commit Verified only
+then), and its message must hold no session link.
 
 Words that must never appear (the maintainer's name) are kept out of the repository, because a list
 here would publish them: they come from the JGR_AUDIT_DENYLIST environment variable (CI reads it from
@@ -74,6 +75,18 @@ def denied_words(text: str, words: list[str]) -> list[str]:
     return [word for word in words if re.search(r"\b" + re.escape(word) + r"\b", text, re.I)]
 
 
+def is_signed(root: pathlib.Path, commit: str) -> bool:
+    """Whether the commit carries a signature header (GPG or SSH; git stores both as gpgsig).
+
+    Only its presence is checked: whose key it is, GitHub decides, and a sandbox has no key list to
+    verify against. A commit without one is Unverified there whatever else is right about it.
+    """
+    raw = subprocess.run(["git", "-C", str(root), "cat-file", "commit", commit],
+                         capture_output=True, check=True, text=True).stdout
+    headers = raw.split("\n\n", 1)[0]
+    return re.search(r"^gpgsig ", headers, re.M) is not None
+
+
 def audit_commits(root: pathlib.Path, rev: str, words: list[str]) -> list[str]:
     """Findings for every commit reachable from rev, each as 'commit: finding'."""
     out = subprocess.run(["git", "-C", str(root), "log", "--format=%H%x1f%an <%ae>%x1f%cn <%ce>%x1f%B%x1e", rev],
@@ -86,6 +99,8 @@ def audit_commits(root: pathlib.Path, rev: str, words: list[str]) -> list[str]:
             findings.append(f"{short}: author is not the project identity")
         if committer != IDENTITY:
             findings.append(f"{short}: committer is not the project identity")
+        if not is_signed(root, commit):
+            findings.append(f"{short}: not signed, so GitHub would show it Unverified")
         if SESSION_LINK.search(message):
             findings.append(f"{short}: a Claude session link in the message")
         if denied_words(" ".join((message, author, committer)), words):

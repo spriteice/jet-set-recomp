@@ -24,6 +24,6 @@ if [ "$(git -C "$repo" config --get commit.gpgsign || true)" = true ] &&
     [ -n "$(git -C "$repo" config --get user.signingkey || true)" ]; then
     echo "$repo: commits as Claude, signed by the sandbox"
 else
-    echo "$repo: commits as Claude, but this sandbox doesn't sign them, so GitHub shows them Unverified." >&2
-    echo "Say so in the review pack before anything is pushed." >&2
+    echo "$repo: commits as Claude, but this sandbox doesn't sign them, so GitHub shows them Unverified" >&2
+    echo "and the audit rejects them. Say so in the review pack; don't commit until signing is on." >&2
 fi

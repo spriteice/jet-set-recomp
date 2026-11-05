@@ -206,7 +206,10 @@ class BuildScripts(unittest.TestCase):
 
 
 class AuditCommits(unittest.TestCase):
-    def repo(self, author: str, message: str) -> pathlib.Path:
+    def repo(self, author: str, message: str, signed: bool = True) -> pathlib.Path:
+        """A repo with one commit. It's made unsigned, whatever this machine's git would do, and a
+        signed one then gets a stand-in signature header: the audit checks that one is there, and
+        GitHub checks whose it is."""
         root = pathlib.Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, root)
         name, email = author.split(" <")
@@ -215,12 +218,26 @@ class AuditCommits(unittest.TestCase):
         subprocess.run(["git", "init", "-q", str(root)], check=True)
         (root / "notes.md").write_text("text\n")
         subprocess.run(["git", "-C", str(root), "add", "notes.md"], check=True)
-        subprocess.run(["git", "-C", str(root), "commit", "-q", "-m", message], check=True, env=env)
+        subprocess.run(["git", "-C", str(root), "commit", "-q", "--no-gpg-sign", "-m", message], check=True, env=env)
+        if signed:
+            git = ["git", "-C", str(root)]
+            raw = subprocess.run([*git, "cat-file", "commit", "HEAD"], capture_output=True, check=True).stdout
+            headers, message_part = raw.split(b"\n\n", 1)
+            headers += b"\ngpgsig -----BEGIN SSH SIGNATURE-----\n U1NIU0lH\n -----END SSH SIGNATURE-----"
+            commit = subprocess.run([*git, "hash-object", "-t", "commit", "-w", "--stdin"],
+                                    input=headers + b"\n\n" + message_part, capture_output=True, check=True).stdout
+            subprocess.run([*git, "update-ref", "HEAD", commit.decode().strip()], check=True)
         return root
 
     def test_the_project_identity_is_clean(self):
         root = self.repo(audit.IDENTITY, "Add notes\n\nCo-Authored-By: Someone <a@example.com>")
         self.assertEqual(audit.audit_commits(root, "HEAD", []), [])
+
+    def test_an_unsigned_commit_is_found(self):
+        root = self.repo(audit.IDENTITY, "Add notes", signed=False)
+        found = audit.audit_commits(root, "HEAD", [])
+        self.assertEqual(len(found), 1, found)
+        self.assertIn("not signed", found[0])
 
     def test_another_author_is_found(self):
         root = self.repo("Pat Example <pat@example.com>", "Add notes")

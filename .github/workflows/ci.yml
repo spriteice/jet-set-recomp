@@ -1,11 +1,11 @@
-# CI: the audit and the scripts' tests, on every push and pull request, with none of the game's
-# files. The translator and the game need the disc, so they aren't built here: those checks are in
-# docs/build-and-test-reference.md ("Before a commit").
+# CI: the audit and the scripts' tests, on every push, with none of the game's files. The translator
+# and the game need the disc, so they aren't built here: those checks are in
+# docs/build-and-test-reference.md ("Before a commit"). There's no pull_request trigger: the project
+# works on main only, and on a pull request HEAD is GitHub's own merge commit, which the audit rejects.
 name: CI
 
 on:
   push:
-  pull_request:
 
 permissions:
   contents: read
