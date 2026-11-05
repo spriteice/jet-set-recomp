@@ -1,6 +1,6 @@
 # Project rules
 
-How a change to JSR-recomp is placed, written, checked and proposed. It's written by the maintainer
+How a change to Jet Set Recomp is placed, written, checked and proposed. It's written by the maintainer
 ("I") for whoever makes the change ("you"), and goes with `docs/project-instructions.md`, the short
 rules, which win over this file only by stopping the work: if they disagree, stop and tell me.
 `docs/build-and-test-reference.md` covers building, testing and reports. Adapted from the JSRF-PC

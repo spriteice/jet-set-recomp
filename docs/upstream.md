@@ -1,6 +1,6 @@
 # Upstream
 
-JSR-recomp is built on [dream-recomp](https://github.com/phobos665/dream-recomp) by phobos665.
+Jet Set Recomp is built on [dream-recomp](https://github.com/phobos665/dream-recomp) by phobos665.
 
 - **`spriteice/dream-recomp`** is our copy. Its `main` started at `51ca2766d2eb` (2026-10-29), with
   libchdr at `8e7b8bd`. Our translator and runtime fixes go on that `main`.

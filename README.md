@@ -1,4 +1,4 @@
-# JSR-recomp
+# Jet Set Recomp
 
 A native PC port of Jet Set Radio's Dreamcast release (Jet Grind Radio in the USA), made by
 recompiling the disc's SH-4 code to C++ with [dream-recomp](https://github.com/phobos665/dream-recomp)
@@ -38,4 +38,4 @@ The build takes about 15 minutes. `scripts/11_build_windows.sh` cross-builds for
 ## Credits
 
 [CREDITS.md](CREDITS.md) lists the work this is built on, above all dream-recomp by phobos665.
-JSR-recomp is GPL-2.0 ([LICENSE](LICENSE)), as dream-recomp is.
+Jet Set Recomp is GPL-2.0 ([LICENSE](LICENSE)), as dream-recomp is.

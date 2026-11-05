@@ -1,6 +1,6 @@
 # Release checklist
 
-No build made from the disc is ever published, so a JSR-recomp release is source only: the repository
+No build made from the disc is ever published, so a Jet Set Recomp release is source only: the repository
 at a tag, which players build with their own disc. A release is tagged and published only on my say-so,
 and how releases are named hasn't been decided yet. Backlogs and `known-bugs.md` live in the shared
 folder's `release-prep/`.

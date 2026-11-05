@@ -30,6 +30,7 @@ JSR-PC project.
 | Commits and builds are made by a cloud thread, not from the PC | Maintainer (card) | 5 Nov, about 01:20 |
 | Track 3 may be split on the PC to copy to a cloud sandbox, and the parts deleted | Maintainer (card) | 5 Nov, about 01:20 |
 | Claude may open a game window on the PC at any time, noting it in `PC-IN-USE.md` | Maintainer (card) | 5 Nov, about 01:20 |
+| The repo is renamed `spriteice/jet-set-recomp`, shown as "Jet Set Recomp"; older rows keep the old name, JSR-recomp | Maintainer (card) | 5 Nov 09:57 |
 
 Not decided yet: version names, whether a release drops the interpreter fallback, and whether other
 disc releases are ever added.

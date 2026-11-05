@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(jsr_recomp LANGUAGES C CXX)
+project(jet_set_recomp LANGUAGES C CXX)
 
 # A game repository is the top-level project and adds dream-recomp as a sibling of its game folder.
 # The sub-project's own settings don't reach that sibling, so the language settings are repeated here.

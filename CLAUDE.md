@@ -1,4 +1,4 @@
-# JSR-recomp: start here
+# Jet Set Recomp: start here
 
 Read these before you work, in this order:
 

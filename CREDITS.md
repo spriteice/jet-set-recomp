@@ -1,7 +1,7 @@
 # Credits
 
 - **[dream-recomp](https://github.com/phobos665/dream-recomp) by phobos665** (GPL-2.0): the recompiler
-  and runtime JSR-recomp is built on. It translates the SH-4 code and runs the Dreamcast's hardware
+  and runtime Jet Set Recomp is built on. It translates the SH-4 code and runs the Dreamcast's hardware
   as native code around it. It's fetched at a pinned commit from
   [our copy](https://github.com/spriteice/dream-recomp), never vendored.
 - **[Flycast](https://github.com/flyinghead/flycast)** (GPL-2.0): dream-recomp ports parts of it and

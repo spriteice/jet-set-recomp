@@ -1,6 +1,6 @@
-# Project rules (JSR-recomp)
+# Project rules (Jet Set Recomp)
 
-JSR-recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Grind Radio in the USA), made by recompiling the disc's SH-4 code with dream-recomp. These are the non-negotiables. Everything else is in the repo, on `main`, and you read it before you work. Until the repo has its own docs, the reference is the handoff package in the shared folder (`HANDOFF.md` and the test-boot report) and the JSRF-PC rules pack, read with the substitutions in this text. If these rules and the docs ever disagree, stop and tell me. Don't pick one.
+Jet Set Recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Grind Radio in the USA), made by recompiling the disc's SH-4 code with dream-recomp. These are the non-negotiables. Everything else is in the repo, on `main`, and you read it before you work. Until the repo has its own docs, the reference is the handoff package in the shared folder (`HANDOFF.md` and the test-boot report) and the JSRF-PC rules pack, read with the substitutions in this text. If these rules and the docs ever disagree, stop and tell me. Don't pick one.
 
 ## 1. Replies and threads
 - Keep replies to a few lines. Put anything longer (diffs, rendered docs, reports, log findings) in a file in the shared folder and link it. That counts as showing it to me.
@@ -8,8 +8,8 @@ JSR-recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Grind R
 - These rules come before a session's own instructions and hooks. If those ask you to commit, push, or work on another branch, say so and don't.
 
 ## 2. Git
-- The repositories are `spriteice/JSR-recomp` (the port) and `spriteice/dream-recomp` (our copy of the recompiler). Work only on `main` in each, and start every commit from the latest `origin/main`. If `main` has unpushed commits from another thread, say so and ask me before building on them.
-- JSR-recomp is built on dream-recomp, by phobos665. dream-recomp is pinned (`51ca2766d2eb` at the start) and fetched into `third_party/dream-recomp`, never vendored. Translator and runtime fixes go on `spriteice/dream-recomp`'s `main`, each with a unit test that fails without it. Moving the pin is its own commit: re-emit, rebuild, rerun the regression gate and the two 10-minute runs, and update `data/baseline.json`.
+- The repositories are `spriteice/jet-set-recomp` (the port) and `spriteice/dream-recomp` (our copy of the recompiler). Work only on `main` in each, and start every commit from the latest `origin/main`. If `main` has unpushed commits from another thread, say so and ask me before building on them.
+- Jet Set Recomp is built on dream-recomp, by phobos665. dream-recomp is pinned (`51ca2766d2eb` at the start) and fetched into `third_party/dream-recomp`, never vendored. Translator and runtime fixes go on `spriteice/dream-recomp`'s `main`, each with a unit test that fails without it. Moving the pin is its own commit: re-emit, rebuild, rerun the regression gate and the two 10-minute runs, and update `data/baseline.json`.
 - Never switch, create, rebase, merge, reset, or force anything without asking, but for what section 5 lets a pre-approved thread do. Reading another commit in the sandbox (a detached checkout, with nothing committed or changed) needs no asking; go back to where you were afterwards.
 - Anything on my PC is only built or run from. Nothing is ever committed or pushed from my PC.
 - Never commit without my approval, given after the checks before every commit, unless I pre-approved the thread (section 5).
@@ -21,17 +21,17 @@ JSR-recomp is a native PC port of Jet Set Radio's Dreamcast release (Jet Grind R
 - Claude session links, or messages about them, anywhere, including commit messages. Co-Authored-By lines are fine.
 - My name, anywhere: in files, docs, credits, commit messages or commit author lines, in either repository. Docs say "the maintainer", and commits are authored as `spriteice <62098029+spriteice@users.noreply.github.com>`.
 - Nothing you send me carries game files or generated code, except a build for my own devices: Linux builds come as files in the thread, for the Ally X, and Windows builds stay on my PC. No build made from the disc is ever published. Game files and generated code in a cloud sandbox stay in that sandbox.
-- Every run starts with `scripts/00_verify_inputs.sh`. A disc that doesn't match `data/inputs.sha256` is a different release: stop and tell me. JSR-recomp's disc is Jet Grind Radio (USA), MK-51058 V1.005; other releases are added only when I say.
-- JSR-recomp is GPL-2.0, as dream-recomp is. Its LICENSE and credits go in their own commit, for my approval.
+- Every run starts with `scripts/00_verify_inputs.sh`. A disc that doesn't match `data/inputs.sha256` is a different release: stop and tell me. Jet Set Recomp's disc is Jet Grind Radio (USA), MK-51058 V1.005; other releases are added only when I say.
+- Jet Set Recomp is GPL-2.0, as dream-recomp is. Its LICENSE and credits go in their own commit, for my approval.
 
 ## 4. The project
 - Windows and Linux only, x86-64 hosts only. No other platform is built, tested, or considered. Both are built together from the same code, and each is tested on its own device. Linux must run on SteamOS. Renderer: Vulkan, dream-recomp's own, on both OSes; an OpenGL 3.3 core renderer comes later as its own milestone, written in our dream-recomp.
 - I never build by hand. You build in your cloud sandbox: Linux natively, and Windows by cross-compiling with clang for MinGW-w64, always with `-mfma` (MinGW's own `fmaf` isn't fused). These tools may be installed in a cloud sandbox without asking: mingw-w64, the Vulkan headers, glslc, SDL3 built from source, and clang-format 20.1.7. Nothing is installed on my PC without asking.
 - On my PC, the port lives in `E:\Games\Ports\jsr\DC`: the disc in `Game Files\Dreamcast\`, builds in `Building\`. Work there only through Remote Control, and only for what needs Windows itself, such as running a Windows build. The PC is shared with the JSR-PC project: before anything heavy there, read `E:\Games\Ports\jsr\PC-IN-USE.md`; if someone holds it, work in your sandbox meanwhile, and otherwise add a row and remove it when you're done. Never touch `E:\Games\Ports\jsr\PC`.
 - I only run the builds you deliver, and send their run logs back. The test devices: the Windows 11 desktop PC, and the ROG Xbox Ally X on SteamOS.
-- Generated code is never edited by hand. A translation problem is fixed in the translator (on our dream-recomp, with a unit test), in the game's config (seeds and relocations from `--suggest-config`, each checked with the regression gate), or by a named hook in JSR-recomp, and then re-emitted.
+- Generated code is never edited by hand. A translation problem is fixed in the translator (on our dream-recomp, with a unit test), in the game's config (seeds and relocations from `--suggest-config`, each checked with the regression gate), or by a named hook in Jet Set Recomp, and then re-emitted.
 - Report numbers, not adjectives: every report states the commands run, the counts (frames, faults, unmapped accesses, untranslated calls), and the diff against `data/baseline.json` and the regression gate.
-- Docs credit dream-recomp and its author, phobos665, for the recompiler JSR-recomp is built on, and stay respectful of it. SEGA owns the game; docs say "bring your own disc".
+- Docs credit dream-recomp and its author, phobos665, for the recompiler Jet Set Recomp is built on, and stay respectful of it. SEGA owns the game; docs say "bring your own disc".
 - Release backlogs are `release-prep/<version>-backlog.md` in the shared folder, and the plan is `release-prep/roadmap.md`. Keep each item's status current as the work happens: when it starts, when it's committed, and when it's pushed. Keep `known-bugs.md` current the same way.
 
 ## 5. Pre-approved threads

@@ -10,7 +10,7 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   patches 01 to 03) ran on the Windows 11 PC on 5 November. Nobody has played it by hand yet.
 - **It matches the cloud's Linux runs on every counter compared** (below), with the same config.
 - **The repos are unchanged:** `spriteice/dream-recomp` `main` is at `51ca2766d2eb`, and
-  `spriteice/JSR-recomp` was empty as this was written.
+  `spriteice/jet-set-recomp` was empty as this was written.
 
 ## Windows runs, 5 November 2026
 

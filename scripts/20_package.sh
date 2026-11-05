@@ -33,6 +33,6 @@ cp "$root/data/inputs.sha256" "$out/tools/"
 cp "$root/scripts/02_make_gdi.py" "$root/scripts/03_get_boot_file.py" "$out/tools/"
 cp -r "$dream/tools/dcdisc/dcdisc" "$out/tools/dcdisc"
 find "$out/tools" -name __pycache__ -type d -prune -exec rm -rf {} +
-cp "$root/LICENSE" "$out/licences/LICENSE-JSR-recomp.txt"
+cp "$root/LICENSE" "$out/licences/LICENSE-jet-set-recomp.txt"
 cp "$dream/LICENSE" "$out/licences/LICENSE-dream-recomp.txt"
 echo "packaged $platform in $out"

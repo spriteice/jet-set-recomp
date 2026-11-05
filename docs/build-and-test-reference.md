@@ -1,6 +1,6 @@
 # Build and test reference
 
-How builds of JSR-recomp are made, checked, delivered and reported. It's written by the maintainer
+How builds of Jet Set Recomp are made, checked, delivered and reported. It's written by the maintainer
 ("I"), who never builds by hand and only runs what's delivered, for whoever makes them ("you").
 
 ## Test devices
@@ -45,7 +45,7 @@ and it made Windows drift from Linux at frame 51, so a MinGW build without FMA d
 
 ## Before a commit
 
-**In JSR-recomp:** `python3 scripts/audit_repo.py .` reports CLEAN, `python3 -m unittest discover -s tests`
+**In Jet Set Recomp:** `python3 scripts/audit_repo.py .` reports CLEAN, `python3 -m unittest discover -s tests`
 passes, and `bash -n` passes on every script. `.github/workflows/ci.yml` runs the same on GitHub, which
 has no disc.
 
