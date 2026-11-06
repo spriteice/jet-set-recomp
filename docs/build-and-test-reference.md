@@ -93,14 +93,17 @@ move every 10-minute run in `data/baseline.json` too, the card runs included.
 
 ## The regression gate
 
-dream-recomp's `tools/regress/gate.py`, which runs a 40 s attract and a 40 s gameplay scenario and
-compares write hashes and counters:
+dream-recomp's `tools/regress/gate.py`, which runs a 40 s attract and a 40 s gameplay scenario and, since
+pin `98bb9fa`, the maintainer's recorded play-through as a third (`--replay NAME FILE SECONDS`: 1,110 s of
+guest time on a new memory card, about 10 minutes of host time in the sandbox), and compares write
+hashes and counters:
 
 ```sh
 G=third_party/dream-recomp/tools/regress/gate.py
-python3 $G capture before --build "$PWD/build" --config "$PWD/games/jgr/jgr.toml" --game jgr
+R="--replay tutorial_mission1 $PWD/data/recordings/2026-11-05-tutorial-mission1.txt 1110"
+python3 $G capture before --build "$PWD/build" --config "$PWD/games/jgr/jgr.toml" --game jgr $R
 # change, rebuild
-python3 $G capture after --build "$PWD/build" --config "$PWD/games/jgr/jgr.toml" --game jgr
+python3 $G capture after --build "$PWD/build" --config "$PWD/games/jgr/jgr.toml" --game jgr $R
 python3 $G compare before after
 ```
 
@@ -108,9 +111,10 @@ The gate measures guest writes only. It doesn't see drawing, sound or pacing, so
 "identical" whether it worked or not. Such a fix needs its own test (for the renderer, a dream-recomp
 unit test on a synthetic TA list, with no game art), and its report says the gate doesn't cover it.
 Every drawing feature that's fixed or added gets one such test, shadows included. The gate and the
-baseline cover the attract loop and the first 40 s of gameplay only, and a report says so when the
-change reaches further. Play-throughs recorded by hand with `--record-input` (two at least, 5 minutes
-or more each) are to join them as scenarios (`docs/status.md`, phase 1).
+baseline cover the attract loop, the first 40 s of gameplay and the recorded tutorial-and-first-mission
+play-through, and a report says so when the change reaches further. Every capture passes the `--replay`
+line above, so a compare never reports that scenario MISSING; the second recording (the first stage,
+5 minutes or more) joins the same way (`docs/status.md`, phase 1).
 
 A changed hash is a fact, and whether it matters is a judgement: explain it in the report, and the
 judgement is mine. A pin move or a phase exit whose gate shows a changed hash waits for my acceptance of

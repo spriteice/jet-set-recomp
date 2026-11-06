@@ -1,4 +1,4 @@
 # The dream-recomp commit this repository builds on, from spriteice/dream-recomp's main. One full
 # hash on the first line that isn't a comment. Moving it is its own commit
 # (docs/project-instructions.md, section 2). Read by scripts/01_fetch_dream_recomp.sh.
-b222a6a81e80929a30c454970cd8a4f87eed5ac3
+98bb9fafbd6f351332055df864e02a56e099b2b1

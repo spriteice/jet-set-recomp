@@ -7,25 +7,29 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 ## Where it stands
 
 - **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
-  `data/dream-recomp.pin` is `b222a6a` (6 November): the four up to `6c098df`, then `697bfc8` (each
-  block's exit written once, `known-bugs.md` 13), `cdd66be` (dcdisc across drives, 14), and the seven
+  `data/dream-recomp.pin` is `98bb9fa` (6 November): the four up to `6c098df`, then `697bfc8` (each
+  block's exit written once, `known-bugs.md` 13), `cdd66be` (dcdisc across drives, 14), the seven
   of 6 November, approved on cards: bug 11's three translator fixes (`6c6cc9f`, `8e409b0`, `ab1faa7`),
   constant propagation past a reload (`ef7c0a6`, bug 17), discovery's blocks cut into basic blocks
   (`73018dc`, bug 19), the run log's output paths and physical addresses (`795dcb8`, bugs 12 and 15),
-  and the window's controls recorded for the right frame (`b222a6a`, bug 18). The build on this pin
-  matches `data/baseline.json` on all four 10-minute runs on every count, the two memory-card runs
-  now at 0 untranslated call targets (from 2, bug 11's cause B). The gate's write hash changed from
-  frame 83 on with identical counters: the interrupt is delivered at a different boundary of the re-cut
-  code and nothing else moves (`review-packs/bug-11-translator/REVIEW.md` in the shared folder, "The
-  frame-83 hash change"); the maintainer accepted it with the pin move on 6 November.
+  the window's controls recorded for the right frame (`b222a6a`, bug 18), and then the gate's replay
+  scenario (`98bb9fa`, tools only: the translator and runtime are `b222a6a`'s). The build on this pin
+  matches `data/baseline.json` on all five runs on every count, the two memory-card runs at 0
+  untranslated call targets (from 2 before `b222a6a`, bug 11's cause B), and the gate's three scenarios
+  are identical to the capture on `b222a6a`. The gate's write hash changed from frame 83 on at `b222a6a`
+  with identical counters: the interrupt is delivered at a different boundary of the re-cut code and
+  nothing else moves (`review-packs/bug-11-translator/REVIEW.md` in the shared folder, "The frame-83
+  hash change"); the maintainer accepted it with that pin move. Ahead of the pin on dream-recomp `main`:
+  `8df9635` (the window's pacing drops lost time instead of sprinting, `known-bugs.md` 22); the next pin
+  move takes it, with the five runs again.
 - **The disc is in a sandbox and the first play-through is recorded.** The maintainer's tutorial-and-
   mission-1 recording (`data/recordings/2026-11-05-tutorial-mission1.txt`, inputs only; the original
   and its report in the shared folder's `recordings/`) is 66,516 frames with 0 traps, 0 unmapped and
   0 untranslated, and replays headless on Linux with every count equal (64,933 sectors, 236 memory-card
   block writes) once its frame numbers are lowered by one, which the committed file is: the launcher
   that recorded it wrote each frame's line before reading the controls (bug 18, fixed in `b222a6a`).
-  It is `runs.tutorial_mission1_replay` in `data/baseline.json`; the gate still runs its two 40 s
-  scenarios only (phase 1's open item: a replay scenario in `tools/regress/gate.py`).
+  It is `runs.tutorial_mission1_replay` in `data/baseline.json` and, since pin `98bb9fa`, the gate's
+  third scenario (`tutorial_mission1`, by `--replay`), whose hash equals the hand replay's.
 - **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7`
   (named with old hashes, `docs/commit-map.md`) on the PC on 5 November: music, saving, loading, the
   tutorial and entering the first level work. Its run
@@ -34,13 +38,17 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 - **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, two wrong
   textures, sparks that don't follow the skates, and pacing while unfocused. `known-bugs.md` in the
   shared folder lists them.
-- **SteamOS hasn't run anything yet.** Five Linux packages are in the shared folder's `builds/`: the
-  current one is `2026-11-05-de56e83-linux`, two older ones named with old hashes, and the two
-  `depthfix-test` ones, which carry an unpushed dream-recomp change. None has `copy-disc.sh` yet: the
-  next Linux package is the first with it, and it goes to the Ally X with the maintainer's save, without
-  the game files, which the maintainer copies and puts in place with that script
-  (`docs/build-and-test-reference.md`, Delivery). The 1.2 GB `Building\2026-11-05-de56e83-linux-ready.tar`
-  on the PC, made with the disc inside before the rule changed, isn't the route any more.
+- **SteamOS has run it, and found four faults (6 November).** The Ally X ran package
+  `2026-11-06-179cdfd-pin-b222a6a-linux` (the first with `copy-disc.sh`, sent with the maintainer's save
+  and no game files, as Delivery says) in Desktop Mode: 81 s of guest time in 89.6 s (0.9x), 4,892
+  frames, 0 traps, 0 unmapped, 0 untranslated; and in Game Mode until it crashed (exit 139) when the
+  Steam overlay opened. `known-bugs.md` 20 to 23: slow in Desktop Mode (open, not narrowed); no sound
+  (the packaged SDL3 had no audio backend: the setup script's apt list lacked the ALSA, PulseAudio and
+  PipeWire headers; fix on a card, a test package with a rebuilt SDL3 went to the device); too fast in
+  Game Mode (the window's pacing caught up after a stall; fixed in dream-recomp `8df9635`, not pinned
+  yet); the crash (a candidate fix for a swapchain fault on a card). The older Linux packages in the
+  shared folder's `builds/` and the 1.2 GB `Building\2026-11-05-de56e83-linux-ready.tar` on the PC are
+  superseded.
 
 The two tables and notes below are the first Windows check, made on build 1 before this repo existed.
 
@@ -105,8 +113,8 @@ alongside. The reasons, from how other recompilation projects ordered their work
      every indirect site classed (257 switch tables, 724 resolved at run time through the function
      table, 4 out of image, which are the exception path's own jumps); one of the two recordings made
      and replaying with 0 untranslated, 0 traps, 0 unmapped; all four 10-minute runs match the
-     baseline; the gate's hash change accepted. Open: the second recording (the first stage, 5 minutes
-     or more) and the gate's replay scenario.
+     baseline; the gate's hash change accepted; the gate's replay scenario in since pin `98bb9fa`.
+     Open: the second recording (the first stage, 5 minutes or more).
    - If the pass needs more than about ten re-emits, splitting the generated unit (phase 6) moves
      here. It's a restructure with no change in behaviour, shown by an identical gate.
 2. **Tell translation faults from renderer faults.**
