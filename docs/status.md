@@ -195,9 +195,19 @@ alongside. The reasons, from how other recompilation projects ordered their work
      (Japan), the 2001 release built from the EU one (6 Nov 06:39). Until then nothing new is designed
      USA-only: the first hook names the release its addresses belong to, by the boot file's hash, and a
      launcher refuses another release's hook table with a message that says so; the texture cache keys by
-     data (phase 4). The two new discs are measured without building, before phase 5: their hashes, a
-     discovery-only coverage report for each boot file, and a diff of the three discs' file listings, all
-     metadata. The plan: `reviews/multi-region-plan-2026-11-06.md` in the shared folder.
+     data (phase 4). Both new discs were measured, built and run headless on 6 November, testing only,
+     at pin `98bb9fa` (`regions/FINDINGS.md` in the shared folder gathers it all; the plan is
+     `reviews/multi-region-plan-2026-11-06.md` there). De La's boot file is the game, and with 4
+     interrupt-vector relocations, no seeds and no translator change, its four 10-minute runs gave
+     35,977 frames, 0 traps, 0 unmapped and 0 untranslated. EU's boot file is a 50/60 Hz menu that loads
+     the game (`JET.BIN` or `JET_PAL.BIN`) over itself, and the translated build faults 8.8 s in,
+     because the runtime goes on running the menu's translations (`known-bugs.md` 31): the config,
+     translator and runtime hold one program per game, so EU starts with a model change, sized and
+     proposed, before its mapping. `JET.BIN` booted directly, with the same 4 relocations, gave USA's
+     no-input frames and renders with 0 traps, 0 unmapped and 0 untranslated; `JET_PAL.BIN` stops
+     rendering about 110 s in, translated only (33). Both discs take their language from the console's
+     setting, which the runtime always reports as English, so a language setting is the one runtime
+     change every other release needs, and both discs can show it working.
 6. **Speed, OpenGL and release.** Rebuild cost, unless phase 1 took it (it didn't: four full builds):
    each config change re-emits 81 MB of C++ in one unit and takes about 15 minutes. OpenGL 3.3 core, as
    its own milestone. The player's build: a release is source only, so the build is what a player
