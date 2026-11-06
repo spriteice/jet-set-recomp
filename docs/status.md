@@ -1,18 +1,31 @@
 # Status
 
-The project's durable notes: where the work stands and what's next. Keep this current. Updated 5
+The project's durable notes: where the work stands and what's next. Keep this current. Updated 6
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
 ## Where it stands
 
-- **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`: the four up to the pin
-  in `data/dream-recomp.pin` (`6c098df`), which this repo builds on, then `697bfc8` (each block's exit
-  written once, `known-bugs.md` 13) and `cdd66be` (dcdisc across drives, 14), both pushed 5 November
-  and not pinned here yet. The first build from this repo matches `data/baseline.json` on both
-  10-minute runs. Since 5 November the baseline also holds the two runs with a memory card
-  (`no_input_vmu`, `presses_vmu`), made on the PC: 35,977 frames each, 0 faults, 0 traps, 0 unmapped,
-  and 2 untranslated targets that are bug 11's cause B.
+- **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
+  `data/dream-recomp.pin` is `b222a6a` (6 November): the four up to `6c098df`, then `697bfc8` (each
+  block's exit written once, `known-bugs.md` 13), `cdd66be` (dcdisc across drives, 14), and the seven
+  of 6 November, approved on cards: bug 11's three translator fixes (`6c6cc9f`, `8e409b0`, `ab1faa7`),
+  constant propagation past a reload (`ef7c0a6`, bug 17), discovery's blocks cut into basic blocks
+  (`73018dc`, bug 19), the run log's output paths and physical addresses (`795dcb8`, bugs 12 and 15),
+  and the window's controls recorded for the right frame (`b222a6a`, bug 18). The build on this pin
+  matches `data/baseline.json` on all four 10-minute runs on every count, the two memory-card runs
+  now at 0 untranslated call targets (from 2, bug 11's cause B). The gate's write hash changed from
+  frame 83 on with identical counters: the interrupt is delivered at a different boundary of the re-cut
+  code and nothing else moves (`review-packs/bug-11-translator/REVIEW.md` in the shared folder, "The
+  frame-83 hash change"); the maintainer accepted it with the pin move on 6 November.
+- **The disc is in a sandbox and the first play-through is recorded.** The maintainer's tutorial-and-
+  mission-1 recording (`data/recordings/2026-11-05-tutorial-mission1.txt`, inputs only; the original
+  and its report in the shared folder's `recordings/`) is 66,516 frames with 0 traps, 0 unmapped and
+  0 untranslated, and replays headless on Linux with every count equal (64,933 sectors, 236 memory-card
+  block writes) once its frame numbers are lowered by one, which the committed file is: the launcher
+  that recorded it wrote each frame's line before reading the controls (bug 18, fixed in `b222a6a`).
+  It is `runs.tutorial_mission1_replay` in `data/baseline.json`; the gate still runs its two 40 s
+  scenarios only (phase 1's open item: a replay scenario in `tools/regress/gate.py`).
 - **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7`
   (named with old hashes, `docs/commit-map.md`) on the PC on 5 November: music, saving, loading, the
   tutorial and entering the first level work. Its run
@@ -65,7 +78,8 @@ alongside. The reasons, from how other recompilation projects ordered their work
 puts each milestone in its phase.
 
 1. **Map the code (now):** a full coverage pass, before any renderer work.
-   - Entry: bug 11's three dream-recomp fixes (`known-bugs.md`, 11) rechecked, committed and pinned.
+   - Entry: done 6 November. Bug 11's three dream-recomp fixes (`known-bugs.md`, 11) rechecked,
+     committed and pinned, with two more discovery fixes the pass found (17, 19).
    - Work: a coverage report from the translator over the whole image, with every byte classed as
      function code, data or literal pool, switch table, padding, or unknown. The image is 3,075,648
      bytes, and discovery at the pin classes 1,216,786 of them as code (39.6%); the baseline's
@@ -83,6 +97,15 @@ puts each milestone in its phase.
      accesses; every 10-minute run in `data/baseline.json` matches it, or the maintainer approves
      the new counts; the gate's counters are equal, and its hash change (the bug 11 patches change
      the write hash from frame 83 on) is explained and accepted by the maintainer.
+   - Where the exit stands (6 November, `coverage/coverage-report-2026-11-05.md` and
+     `coverage/unknown-ranges.csv` in the shared folder): every byte of the image classed
+     (1,263,576 instructions, 230,802 literal words, 14,786 switch-table words; 9,737 unknown ranges
+     listed with their sizes, 15,452 bytes of them code-like and none referenced by any image word);
+     every indirect site classed (257 switch tables, 724 resolved at run time through the function
+     table, 4 out of image, which are the exception path's own jumps); one of the two recordings made
+     and replaying with 0 untranslated, 0 traps, 0 unmapped; all four 10-minute runs match the
+     baseline; the gate's hash change accepted. Open: the second recording (the first stage, 5 minutes
+     or more) and the gate's replay scenario.
    - If the pass needs more than about ten re-emits, splitting the generated unit (phase 6) moves
      here. It's a restructure with no change in behaviour, shown by an identical gate.
 2. **Tell translation faults from renderer faults.**
@@ -134,3 +157,10 @@ puts each milestone in its phase.
 - Git Bash on the PC runs `scripts/00_verify_inputs.sh` fine.
 - Hashing the whole disc takes about 5 minutes on the PC.
 - `jgr_boot --window` opens a real window, and implies sound unless `--no-audio` is given.
+- The PC is shared with the JSRF-PC project (the maintainer, 5 November): one job runs on it at a
+  time, and the claim lives in that project's shared folder at `building-on-pc/PC-IN-USE.md`, not in
+  `E:\Games\Ports\jsr\`. Before any PC work: read it, and an "In use from ..." line means wait or
+  work elsewhere; if it's free, add one line ("In use from <UTC time> on <date> by <project and
+  thread>, <what and where>, about <how long>"); read it again just before starting; when done, move
+  the line to the top of `PC-HISTORY.md` beside it. Stay out of `Claude\Building\` and the
+  `jsrf-build` Docker setup. A thread that can't reach that folder asks the maintainer first.

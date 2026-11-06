@@ -129,11 +129,14 @@ All headless, with `--rtc-seed 1 --max-seconds 600 --report FILE --write-hash FI
 - **Presses:** `--press start@1500,start@1800,a@2100,start@2400,a@2700,a@3000,start@3300`.
 - **The same two with a memory card:** `--vmu FILE`, naming a file that doesn't exist yet, so the
   program makes a blank, formatted card, as every player's first run does. The attract loop reads the
-  card and takes code the no-card runs never reach: at the current pin, 2 untranslated targets (bug 11's
-  cause B in `known-bugs.md`) that go once the translator fix is pinned.
+  card and takes code the no-card runs never reach: 0 untranslated targets since the pin `b222a6a`
+  (6 November); the pin before it had 2 there, bug 11's cause B in `known-bugs.md`.
 
 Compare each with its run in `data/baseline.json` (`no_input`, `presses`, `no_input_vmu`, `presses_vmu`).
-Frames, traps, unmapped accesses and untranslated call targets must match or be explained; those are
+The baseline's fifth run, `tutorial_mission1_replay`, is the maintainer's recorded play-through:
+`--replay-input data/recordings/2026-11-05-tutorial-mission1.txt --rtc-seed 1 --max-seconds 1110
+--vmu FILE` (a file that doesn't exist yet), about 10 minutes in a sandbox; a change that reaches past
+the attract loop runs it too and compares the same way. Frames, traps, unmapped accesses and untranslated call targets must match or be explained; those are
 the report's own lines, and it has no "faults" line, so a report never states a faults count it didn't
 read. A clean run has 0 traps, 0 unmapped, and the untranslated count and addresses its baseline run
 records: 0 without a card.

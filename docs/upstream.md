@@ -12,7 +12,9 @@ Jet Set Recomp is built on [dream-recomp](https://github.com/phobos665/dream-rec
   the maintainer's approval.
 - **Offering anything to phobos665/dream-recomp is publishing,** and waits for the maintainer. Four of our
   changes fix dream-recomp itself: the headless build, the resumed entry poll, each block's exit written
-  once (`697bfc8`) and dcdisc across drives (`cdd66be`). The maintainer chose "Not
+  once (`697bfc8`) and dcdisc across drives (`cdd66be`); seven more landed on 6 November (bug 11's
+  three, constant propagation, basic blocks, the run log's output paths, the recording's frame; the pin
+  in `data/dream-recomp.pin`). The maintainer chose "Not
   yet" on 5 November 2026, so they stay on our copy until the maintainer decides.
 - **dream-recomp's conventions:** our commits there follow its `CONTRIBUTING.md` where it applies to us:
   clang-format 20.1.7, a differential test for every emitter change, and an ADR in its `docs/decisions/`

@@ -1,12 +1,12 @@
 {
-  "_about": "The numbers a run is compared with (docs/build-and-test-reference.md). Changes only with the maintainer's approval. Runs are headless, --rtc-seed 1, --max-seconds 600, on the final config. Counts only. The *_vmu runs attach a new memory card (a file that doesn't exist yet, so the program makes a blank, formatted one, as a player's first run does); the others attach none. linux_sandbox_speed_x is null where no Linux sandbox has made the run yet. discovery.bytes_total is the span of the emitted functions, not the boot image (3,075,648 bytes): the coverage pass measures against the image.",
+  "_about": "The numbers a run is compared with (docs/build-and-test-reference.md). Changes only with the maintainer's approval. Runs are headless, --rtc-seed 1, --max-seconds 600 (or the entry's max_seconds), on the final config. Counts only. The *_vmu runs and the replay run attach a new memory card (a file that doesn't exist yet, so the program makes a blank, formatted one, as a player's first run does); the others attach none. linux_sandbox_speed_x is null where no Linux sandbox has made the run yet. discovery.bytes_total is the span of the emitted functions, not the boot image (3,075,648 bytes): the coverage pass measures against the image.",
   "disc": "Jet Grind Radio (USA), MK-51058 V1.005",
   "discovery": {
-    "functions": 12259,
-    "instructions": 712697,
-    "switch_tables": 120,
-    "bytes_decoded": 1216786,
-    "bytes_total": 1447388
+    "functions": 12184,
+    "instructions": 756050,
+    "switch_tables": 216,
+    "bytes_decoded": 1263576,
+    "bytes_total": 1495698
   },
   "runs": {
     "no_input": {
@@ -25,7 +25,8 @@
       "reproduced_on": [
         "Linux sandbox, run r10, 1.7x real time, 4 Nov 2026",
         "Windows 11, i7-10700K, run w1, 2.4x real time, 5 Nov 2026",
-        "Linux sandbox, this repo's build at pin 6c098df68811, 1.6x real time, 5 Nov 2026"
+        "Linux sandbox, this repo's build at pin 6c098df68811, 1.6x real time, 5 Nov 2026",
+        "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026"
       ]
     },
     "presses": {
@@ -44,7 +45,8 @@
       "reproduced_on": [
         "Linux sandbox, run r11, 1.9x real time, 4 Nov 2026",
         "Windows 11, i7-10700K, run w2, 2.7x real time, 5 Nov 2026",
-        "Linux sandbox, this repo's build at pin 6c098df68811, 1.8x real time, 5 Nov 2026"
+        "Linux sandbox, this repo's build at pin 6c098df68811, 1.8x real time, 5 Nov 2026",
+        "Linux sandbox, build on pin b222a6a, 2.1x real time, 6 Nov 2026"
       ]
     },
     "no_input_vmu": {
@@ -54,13 +56,8 @@
       "traps": 0,
       "faults": 0,
       "unmapped_accesses": 0,
-      "untranslated_call_targets": 2,
-      "untranslated_addresses": [
-        "0x0c28ed8a",
-        "0x0c28ed94"
-      ],
-      "untranslated_cause": "known-bugs.md 11, cause B: the switch at 0x0c28ed40, cases the attract loop takes only with a card present; 0 once the translator fix is pinned",
-      "linux_sandbox_speed_x": null,
+      "untranslated_call_targets": 0,
+      "linux_sandbox_speed_x": 1.9,
       "windows_pc_speed_x": 2.4,
       "interrupts": 229696,
       "renders": 17927,
@@ -69,7 +66,8 @@
       "sound_samples_nonzero": 22269385,
       "sound_samples_total": 26460860,
       "reproduced_on": [
-        "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026"
+        "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026",
+        "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026: 0 untranslated call targets since this pin (bug 11's fix), from 2 at 0x0c28ed8a and 0x0c28ed94"
       ]
     },
     "presses_vmu": {
@@ -79,13 +77,8 @@
       "traps": 0,
       "faults": 0,
       "unmapped_accesses": 0,
-      "untranslated_call_targets": 2,
-      "untranslated_addresses": [
-        "0x0c28ed8a",
-        "0x0c28ed94"
-      ],
-      "untranslated_cause": "known-bugs.md 11, cause B: the switch at 0x0c28ed40, cases the attract loop takes only with a card present; 0 once the translator fix is pinned",
-      "linux_sandbox_speed_x": null,
+      "untranslated_call_targets": 0,
+      "linux_sandbox_speed_x": 1.9,
       "windows_pc_speed_x": 2.4,
       "interrupts": 230355,
       "renders": 17927,
@@ -94,9 +87,31 @@
       "sound_samples_nonzero": 25242025,
       "sound_samples_total": 26460860,
       "reproduced_on": [
-        "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026"
+        "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026",
+        "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026: 0 untranslated call targets since this pin (bug 11's fix), from 2 at 0x0c28ed8a and 0x0c28ed94"
+      ]
+    },
+    "tutorial_mission1_replay": {
+      "press": "",
+      "replay_input": "data/recordings/2026-11-05-tutorial-mission1.txt",
+      "max_seconds": 1110,
+      "vmu": "a new file, made blank and formatted by the program at start",
+      "frames": 66549,
+      "traps": 0,
+      "unmapped_accesses": 0,
+      "untranslated_call_targets": 0,
+      "linux_sandbox_speed_x": 1.8,
+      "interrupts": 446361,
+      "renders": 33211,
+      "gdrom_sectors": 64933,
+      "memory_card": "53 block reads, 236 block writes, 1 media-info reads, 3017 screen writes",
+      "sound_samples_nonzero": 47514288,
+      "sound_samples_total": 48952591,
+      "recorded_on": "Windows 11, i7-10700K, the maintainer playing the tutorial and mission 1 and saving, 5 Nov 2026, in the windowed Windows build of dream-recomp cdd66be with the three bug 11 patches (--window --record-input, a fresh card): 66,516 frames in 1,109 s, 0 traps, 0 unmapped, 0 untranslated, 53 block reads, 236 block writes. The replay runs 33 frames past the window's closing, which is the difference in frames, interrupts and renders.",
+      "reproduced_on": [
+        "Linux sandbox, build on pin b222a6a, 1.8x real time, 6 Nov 2026"
       ]
     }
   },
-  "built_from": "dream-recomp 6c098df68811, this repo's pin, built with scripts/10_build_linux.sh on 5 Nov 2026. Test build 1 (51ca2766d2eb with patches 01 to 03) gave the same counts."
+  "built_from": "dream-recomp b222a6a81e80, this repo's pin, built with scripts/10_build_linux.sh on 6 Nov 2026: the seven commits that close known bugs 11, 12, 15, 17, 18 and 19 (five translator fixes, two run-log fixes). The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
 }
