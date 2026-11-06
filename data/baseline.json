@@ -27,7 +27,8 @@
         "Windows 11, i7-10700K, run w1, 2.4x real time, 5 Nov 2026",
         "Linux sandbox, this repo's build at pin 6c098df68811, 1.6x real time, 5 Nov 2026",
         "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 782469f, 2.0x real time, 6 Nov 2026"
       ]
     },
     "presses": {
@@ -48,7 +49,8 @@
         "Windows 11, i7-10700K, run w2, 2.7x real time, 5 Nov 2026",
         "Linux sandbox, this repo's build at pin 6c098df68811, 1.8x real time, 5 Nov 2026",
         "Linux sandbox, build on pin b222a6a, 2.1x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin 98bb9fa, 2.1x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin 98bb9fa, 2.1x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 782469f, 2.2x real time, 6 Nov 2026"
       ]
     },
     "no_input_vmu": {
@@ -70,7 +72,8 @@
       "reproduced_on": [
         "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026",
         "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026: 0 untranslated call targets since this pin (bug 11's fix), from 2 at 0x0c28ed8a and 0x0c28ed94",
-        "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 782469f, 1.9x real time, 6 Nov 2026"
       ]
     },
     "presses_vmu": {
@@ -92,7 +95,8 @@
       "reproduced_on": [
         "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026",
         "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026: 0 untranslated call targets since this pin (bug 11's fix), from 2 at 0x0c28ed8a and 0x0c28ed94",
-        "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 782469f, 2.0x real time, 6 Nov 2026"
       ]
     },
     "tutorial_mission1_replay": {
@@ -114,9 +118,10 @@
       "recorded_on": "Windows 11, i7-10700K, the maintainer playing the tutorial and mission 1 and saving, 5 Nov 2026, in the windowed Windows build of dream-recomp cdd66be with the three bug 11 patches (--window --record-input, a fresh card): 66,516 frames in 1,109 s, 0 traps, 0 unmapped, 0 untranslated, 53 block reads, 236 block writes. The replay runs 33 frames past the window's closing, which is the difference in frames, interrupts and renders.",
       "reproduced_on": [
         "Linux sandbox, build on pin b222a6a, 1.8x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin 98bb9fa, 1.8x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin 98bb9fa, 1.8x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 782469f, 1.9x real time, 6 Nov 2026"
       ]
     }
   },
-  "built_from": "dream-recomp 98bb9fafbd6f, this repo's pin, built with scripts/10_build_linux.sh on 6 Nov 2026: the gate's replay scenario (tools/regress only) on top of b222a6a, whose translator and runtime it keeps, so every number here is b222a6a's: the seven commits that close known bugs 11, 12, 15, 17, 18 and 19 (five translator fixes, two run-log fixes). The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
+  "built_from": "dream-recomp 782469fe8a68, this repo's pin, built with scripts/10_build_linux.sh on 6 Nov 2026: on top of 98bb9fa (the gate's replay scenario, tools/regress only), the window's pacing (8df9635) and swapchain (86e2b2a) fixes and three CI fixes (a205ea9, 45bbffe, 782469f: tests and the gate's launcher lookup). A headless run reaches none of them, and the translator is b222a6a's, so every number here is b222a6a's: the seven commits that close known bugs 11, 12, 15, 17, 18 and 19 (five translator fixes, two run-log fixes). The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
 }
