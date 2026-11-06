@@ -182,6 +182,10 @@ Desktop Mode, naming the `.cue`; it copies the tracks into `disc/`, checks them 
 list, and writes `disc.gdi` with paths inside the folder, so the folder is complete and `play.sh`
 can be added to Steam. The build's `TESTING.md` gives the steps.
 Its launchers write a run log for every run, `logs/run-<start time>.txt`, and never overwrite one.
+`play.sh` also keeps what the program prints on stderr in `logs/stderr-<start time>.txt`, because
+Game Mode has no terminal, and names it in `logs/launcher.txt` when the program fails. The Windows
+package carries `record.bat`, which records a play-through (`--record-input`, `--rtc-seed 1`) on a
+copy of the save and keeps an untouched copy of the card it started from, which the replay needs.
 
 - **Linux:** attached in the thread as a file, for the Ally X, or copied from the PC with the game
   files. I send its run logs back in the thread.

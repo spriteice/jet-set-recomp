@@ -41,7 +41,7 @@ case "$platform" in
     windows)
         cp "$program" "$out/"
         cp "${DREAM_WIN_PREFIX:-$HOME/win/prefix}/bin/SDL3.dll" "$out/"
-        cp "$root/packaging/play.bat" "$root/packaging/setup.bat" "$out/"
+        cp "$root/packaging/play.bat" "$root/packaging/setup.bat" "$root/packaging/record.bat" "$out/"
         ;;
 esac
 

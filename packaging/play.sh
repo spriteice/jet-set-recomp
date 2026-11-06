@@ -25,8 +25,24 @@ for need in disc.gdi boot/1ST_READ.BIN; do
     fi
 done
 # Each run keeps its own log in logs/, named by its start time. None is overwritten.
-log="logs/run-$(date +%Y-%m-%d_%H-%M-%S).txt"
-LD_LIBRARY_PATH=".${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ./jgr_boot --config jgr.toml --window --vmu vmu-a1.bin --report "$log" "$@"
+stamp="$(date +%Y-%m-%d_%H-%M-%S)"
+log="logs/run-$stamp.txt"
+# What the program itself prints on stderr (a Vulkan or SDL error, the last words before a crash) is
+# lost in Game Mode, which has no terminal, so it's kept in logs/ beside the run's log, and shown on the
+# terminal after the run when there is one. A run that printed nothing leaves no file.
+err="logs/stderr-$stamp.txt"
+LD_LIBRARY_PATH=".${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" ./jgr_boot --config jgr.toml --window --vmu vmu-a1.bin --report "$log" "$@" 2>"$err"
 status=$?
-[ "$status" -eq 0 ] || fail "jgr_boot exited with code $status. Send back $log if it exists, and logs/launcher.txt."
+if [ -s "$err" ]; then
+    cat "$err" >&2
+else
+    rm -f "$err"
+    err=""
+fi
+if [ "$status" -ne 0 ]; then
+    # 128 + N is how the shell reports a program killed by signal N: 139 is a crash (11, SIGSEGV).
+    how="exited with code $status"
+    [ "$status" -gt 128 ] && how="$how, killed by signal $((status - 128))"
+    fail "jgr_boot $how. Send back $log if it exists, ${err:+$err, }and logs/launcher.txt."
+fi
 exit "$status"

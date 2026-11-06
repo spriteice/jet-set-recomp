@@ -33,7 +33,8 @@ Playing
 Run play.bat on Windows or play.sh on Linux. Until setup has run, they say what's missing and
 stop. On a Steam Deck or another SteamOS device, run copy-disc.sh (or setup.sh) once in Desktop
 Mode, then add play.sh to Steam as a non-Steam game to play in Game Mode. If the game can't start
-there, the reason is in logs/launcher.txt. A controller is best: the game steers with the stick.
+there, the reason is in logs/launcher.txt, and anything the game itself printed is in
+logs/stderr-<start time>.txt. A controller is best: the game steers with the stick.
 
 Keyboard: arrow keys are the d-pad, Z X A S are A B X Y, Return is Start, Q and W are the triggers.
 F1 opens the binding screen (a pad's select button does too), F10 shows the frame-rate counter, F12
@@ -41,6 +42,15 @@ writes a screenshot, Esc quits. The memory card vmu-a1.bin is made, blank and fo
 first run. Each run writes its own log when the game closes, in logs/, named by the time the run
 started (logs/run-2026-11-05_09-45-16.txt, say), so no run's log is overwritten. A log holds counts
 only (frames, faults, calls the translator missed). Send back the logs from a test.
+
+Recording a play-through (Windows)
+----------------------------------
+record.bat plays like play.bat, with two differences: it plays on a copy of your save, so
+vmu-a1.bin isn't written, and it records the controls, frame by frame, to
+logs\record-<start time>-input.txt with a fixed console clock, so the run can be replayed exactly.
+It keeps an untouched copy of the card it started from, logs\record-<start time>-card-start.bin,
+which a replay starts from. The input file and the report hold controls and counts only: send
+those two back. The cards stay on your PC.
 
 What is known
 -------------

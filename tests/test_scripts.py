@@ -216,6 +216,56 @@ class Package(unittest.TestCase):
         args = (self.out / "ran.txt").read_text()
         self.assertRegex(args, r"--report logs/run-\d{4}-\d\d-\d\d_\d\d-\d\d-\d\d\.txt")
         self.assertTrue((self.out / "logs").is_dir())
+        self.assertEqual(list((self.out / "logs").glob("stderr-*")), [])  # nothing printed, no file
+
+    def test_play_keeps_what_the_program_prints_and_names_a_crash(self):
+        # Game Mode has no terminal: the program's own last words (a Vulkan error before a crash, say)
+        # are only seen if play.sh keeps them.
+        (self.out / "disc.gdi").write_text("")
+        (self.out / "boot").mkdir()
+        (self.out / "boot/1ST_READ.BIN").write_text("")
+        (self.out / "jgr_boot").write_text('#!/bin/sh\necho "vk: device lost" >&2\nkill -SEGV $$\n')
+        result = self.play()
+        self.assertEqual(result.returncode, 139, result.stderr)
+        kept = list((self.out / "logs").glob("stderr-*.txt"))
+        self.assertEqual(len(kept), 1)
+        self.assertRegex(kept[0].name, r"^stderr-\d{4}-\d\d-\d\d_\d\d-\d\d-\d\d\.txt$")
+        # The program's words, then the shell's own note of the signal where it gives one (dash does).
+        self.assertTrue(kept[0].read_text().startswith("vk: device lost\n"), kept[0].read_text())
+        self.assertIn("vk: device lost", result.stderr)  # and shown where there is a terminal
+        launcher = (self.out / "logs/launcher.txt").read_text()
+        self.assertIn("exited with code 139, killed by signal 11", launcher)
+        self.assertIn(f"logs/{kept[0].name}", launcher)
+
+
+class WindowsPackage(unittest.TestCase):
+    def test_the_windows_package_holds_its_launchers_and_the_recorder(self):
+        folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, folder)
+        root = fake_checkout(folder)
+        program = root / "build-win/games/jgr/jgr_boot.exe"
+        program.parent.mkdir(parents=True)
+        program.write_text("")
+        (folder / "win/bin").mkdir(parents=True)
+        # Stands in for SDL3.dll: holds DirectSound's looked-up name, as a real one does.
+        (folder / "win/bin/SDL3.dll").write_bytes(b"\0DirectSoundCreate8\0")
+        out = folder / "package"
+        subprocess.run(["bash", str(root / "scripts/20_package.sh"), "windows", str(out)], check=True,
+                       capture_output=True, env=dict(os.environ, DREAM_WIN_PREFIX=str(folder / "win")))
+        for name in ("jgr_boot.exe", "SDL3.dll", "play.bat", "setup.bat", "record.bat", "jgr.toml"):
+            self.assertTrue((out / name).exists(), name)
+
+    def test_record_bat_keeps_the_card_it_started_from(self):
+        # There's no Windows here to run it: the lines say the start card is copied before the run, the
+        # run plays on the other copy, and the clock is fixed, which is what a replay needs.
+        lines = (ROOT / "packaging/record.bat").read_text().splitlines()
+        start = next(i for i, line in enumerate(lines) if "-card-start.bin" in line and line.startswith("copy "))
+        run = next(i for i, line in enumerate(lines) if line.startswith('"%~dp0jgr_boot.exe"'))
+        self.assertLess(start, run)
+        self.assertIn('--vmu "logs\\record-%JGR_RUN%-card.bin"', lines[run])
+        self.assertIn("--rtc-seed 1", lines[run])
+        self.assertIn('--record-input "logs\\record-%JGR_RUN%-input.txt"', lines[run])
+        self.assertNotIn("vmu-a1.bin", lines[run])  # the player's own save is never played on here
 
 
 class CopyDisc(unittest.TestCase):
