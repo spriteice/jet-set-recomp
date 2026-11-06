@@ -7,7 +7,7 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 ## Where it stands
 
 - **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
-  `data/dream-recomp.pin` is `782469f` (6 November): the four up to `6c098df`, then `697bfc8` (each
+  `data/dream-recomp.pin` is `d990818` (6 November): the four up to `6c098df`, then `697bfc8` (each
   block's exit written once, `known-bugs.md` 13), `cdd66be` (dcdisc across drives, 14), the seven
   of 6 November, approved on cards: bug 11's three translator fixes (`6c6cc9f`, `8e409b0`, `ab1faa7`),
   constant propagation past a reload (`ef7c0a6`, bug 17), discovery's blocks cut into basic blocks
@@ -15,15 +15,18 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   the window's controls recorded for the right frame (`b222a6a`, bug 18), the gate's replay scenario
   (`98bb9fa`, tools only), the window's pacing dropping lost time instead of sprinting (`8df9635`,
   bug 22), a suboptimal swapchain image presented before the rebuild (`86e2b2a`, bug 23's candidate),
-  and three CI fixes (`a205ea9`, `45bbffe`, `782469f`: tests and the gate's launcher lookup, known bugs
-  28 and 29). The translator is `b222a6a`'s, and nothing after it reaches a headless run. The build on
-  this pin matches `data/baseline.json` on all five runs on every count, the two memory-card runs at 0
-  untranslated call targets (from 2 before `b222a6a`, bug 11's cause B), and the gate's three scenarios
-  are identical to the capture on `98bb9fa`. The gate's write hash changed from frame 83 on at `b222a6a`
-  with identical counters: the interrupt is delivered at a different boundary of the re-cut code and
-  nothing else moves (`review-packs/bug-11-translator/REVIEW.md` in the shared folder, "The frame-83
-  hash change"); the maintainer accepted it with that pin move. Nothing is ahead of the pin on
-  dream-recomp `main` (6 November, 09:20 UTC).
+  three CI fixes (`a205ea9`, `45bbffe`, `782469f`: tests and the gate's launcher lookup, known bugs
+  28 and 29), and four window fixes: a present semaphore per swapchain image (`c1016c5`, bug 25), a
+  failed window stopping the run with its error (`da5830c`, 26), a staging buffer per frame in flight
+  (`b76cc75`, 34), and the vertical-blank hook holding its pacer instead of a dead local (`d990818`,
+  35, the cause of 23's crash). The translator is `b222a6a`'s, and nothing after it reaches a headless
+  run. The build on this pin matches `data/baseline.json` on all five runs on every count, the two
+  memory-card runs at 0 untranslated call targets (from 2 before `b222a6a`, bug 11's cause B), and the
+  gate's three scenarios are identical to the capture on `782469f`. The gate's write hash changed
+  from frame 83 on at `b222a6a` with identical counters: the interrupt is delivered at a different
+  boundary of the re-cut code and nothing else moves (`review-packs/bug-11-translator/REVIEW.md` in
+  the shared folder, "The frame-83 hash change"); the maintainer accepted it with that pin move.
+  Nothing is ahead of the pin on dream-recomp `main` (6 November, 15:30 UTC).
 - **The disc is in a sandbox and the first play-through is recorded.** The maintainer's tutorial-and-
   mission-1 recording (`data/recordings/2026-11-05-tutorial-mission1.txt`, inputs only; the original
   and its report in the shared folder's `recordings/`) is 66,516 frames with 0 traps, 0 unmapped and
@@ -40,16 +43,20 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
 - **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, two wrong
   textures, sparks that don't follow the skates, and pacing while unfocused. `known-bugs.md` in the
   shared folder lists them.
-- **SteamOS has run it, and found four faults (6 November).** The Ally X ran package
+- **SteamOS runs it (6 November).** The Ally X first ran package
   `2026-11-06-179cdfd-pin-b222a6a-linux` (the first with `copy-disc.sh`, sent with the maintainer's save
   and no game files, as Delivery says) in Desktop Mode: 81 s of guest time in 89.6 s (0.9x), 4,892
   frames, 0 traps, 0 unmapped, 0 untranslated; and in Game Mode until it crashed (exit 139) when the
-  Steam overlay opened. `known-bugs.md` 20 to 23: slow in Desktop Mode (open, not narrowed); no sound
-  (the packaged SDL3 had no audio backend: the setup script's apt list lacked the ALSA, PulseAudio and
-  PipeWire headers; fixed here in `d5cba65`, and a test package with a rebuilt SDL3 went to the device);
-  too fast in Game Mode (the window's pacing caught up after a stall; fixed in dream-recomp `8df9635`,
-  pinned since `782469f`); the crash (a candidate fix for a swapchain fault, `86e2b2a`, pinned since
-  `782469f`). The older Linux packages in the
+  Steam overlay opened: `known-bugs.md` 20 to 23, slow in Desktop Mode, no sound, too fast in Game
+  Mode, and the crash. The test package `2026-11-06-ddb315d-pin-91c1638-test-window-linux` (this pin's
+  code, and the sound fix `d5cba65`) cleared all four on the device: Desktop Mode from Konsole, 55.543 s
+  of guest time in 55.78 s (0.996 of real time, from 0.904); Desktop Mode through Steam, 0.954; Game
+  Mode, 217.991 s in 220.60 s (0.988), 13,078 frames, the Steam menu opened and closed; each 0 traps,
+  0 unmapped, 0 untranslated, with sound (0 samples dropped) and the controller. The crash was bug 35,
+  the vertical-blank hook writing a dead local, not the swapchain. The run reports print those ratios
+  as 0.9x: their decimals round toward zero under the guest's FPU mode (37). From Konsole the
+  controller does nothing, as with other ports: Steam holds it in Desktop Mode (38). Open there: the
+  attract demo plays out of step (36), and the drawing bugs above. The older Linux packages in the
   shared folder's `builds/` and the 1.2 GB `Building\2026-11-05-de56e83-linux-ready.tar` on the PC are
   superseded.
 
