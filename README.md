@@ -10,11 +10,13 @@ published.
 
 ## Status
 
-The translated build is playable on Windows: music, saving, loading, the tutorial and the first level
-work. Four headless 600 guest-second runs reach 35,977 frames each with 0 traps and 0 unmapped
-accesses; the two without a memory card have 0 calls falling back to the interpreter, the two with one
-have 2, and in real play more code the translator missed still runs interpreted. Shadows aren't
-drawn, a few textures are wrong, and Linux hasn't been tried on SteamOS yet.
+The translated build is playable on Windows, and on Linux on a SteamOS handheld in Desktop Mode
+and Game Mode: music, saving, loading, the tutorial and the first level work. Four headless 600
+guest-second runs reach 35,977 frames each with 0 traps, 0 unmapped accesses and 0 calls falling back
+to the interpreter, and so does a recorded play-through of the tutorial and the first mission.
+Shadows aren't drawn, a few textures are wrong, and the attract demo after the title plays out of
+step. On SteamOS, start the game from Steam, in Desktop Mode too: Steam gives the controller only to
+games it starts.
 [docs/status.md](docs/status.md) has the current state and what's next.
 
 ## Supported disc

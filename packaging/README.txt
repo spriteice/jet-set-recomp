@@ -32,9 +32,12 @@ Playing
 -------
 Run play.bat on Windows or play.sh on Linux. Until setup has run, they say what's missing and
 stop. On a Steam Deck or another SteamOS device, run copy-disc.sh (or setup.sh) once in Desktop
-Mode, then add play.sh to Steam as a non-Steam game to play in Game Mode. If the game can't start
-there, the reason is in logs/launcher.txt, and anything the game itself printed is in
-logs/stderr-<start time>.txt. A controller is best: the game steers with the stick.
+Mode, then add play.sh to Steam as a non-Steam game, and always start it from Steam, in Game Mode
+or in Desktop Mode. SteamOS gives the built-in controller to a game only when Steam starts it:
+started from a terminal such as Konsole, the game runs but the controller does nothing, as with
+other ports and emulators. If the game can't start, the reason is in logs/launcher.txt, and
+anything the game itself printed is in logs/stderr-<start time>.txt. A controller is best: the game
+steers with the stick.
 
 Keyboard: arrow keys are the d-pad, Z X A S are A B X Y, Return is Start, Q and W are the triggers.
 F1 opens the binding screen (a pad's select button does too), F10 shows the frame-rate counter, F12
