@@ -120,6 +120,26 @@ class Audit(unittest.TestCase):
     def test_instruction_text_is_found(self):
         self.assertIn("instruction text", self.findings("trace.log", b"0c014070: 4f22 sts.l pr,@-r15\n"))
 
+    def test_a_commit_message_is_checked_before_the_commit_exists(self):
+        """The commit-msg hook checks the message the way the commit audit does, minus the identity
+        and signature, which don't exist yet. Git's '#' comment lines are ignored."""
+        link = "https://" + "claude" + ".ai/code/session_x"
+        self.assertIn("a Claude session link in the message", audit.audit_message("Add notes\n\n" + link, []))
+        self.assertEqual(audit.audit_message("Add notes\n\nCo-Authored-By: Someone <a@example.com>", []), [])
+        self.assertEqual(audit.audit_message("Add notes\n# " + link, []), [])
+        self.assertIn("a denied word in the message", audit.audit_message("Notes for Pat", ["pat"]))
+        with tempfile.TemporaryDirectory() as folder:
+            message = pathlib.Path(folder) / "COMMIT_EDITMSG"
+            message.write_text("Add notes\n\n" + link + "\n")
+            result = subprocess.run([sys.executable, str(ROOT / "scripts/audit_repo.py"), folder,
+                                     "--message", str(message)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("NOT CLEAN", result.stdout)
+            message.write_text("Add notes\n")
+            result = subprocess.run([sys.executable, str(ROOT / "scripts/audit_repo.py"), folder,
+                                     "--message", str(message)], capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stdout)
+
     def test_a_large_text_file_is_found(self):
         big = b"x\n" * (audit.MAX_TEXT_BYTES // 2 + 1)
         self.assertTrue(any("too big" in item for item in self.findings("big.md", big)))
@@ -451,6 +471,57 @@ class GitSetup(unittest.TestCase):
                                  capture_output=True, text=True).stdout.strip()
         self.assertEqual(fetched, latest)
         self.assertIn("origin/main is", result.stdout)
+
+
+    def commit(self, repo: pathlib.Path, message: str) -> subprocess.CompletedProcess:
+        name, email = audit.IDENTITY.rstrip(">").split(" <")
+        env = dict(os.environ, GIT_AUTHOR_NAME=name, GIT_AUTHOR_EMAIL=email,
+                   GIT_COMMITTER_NAME=name, GIT_COMMITTER_EMAIL=email)
+        return subprocess.run(["git", "-C", str(repo), "commit", "-q", "--no-gpg-sign", "--allow-empty",
+                               "-m", message], capture_output=True, text=True, env=env)
+
+    def test_it_installs_the_audit_as_commit_hooks(self):
+        """In a clone of this repo, a commit with a forbidden file or a session link in its message is
+        refused before it's made, so a leak is stopped before a push could publish it."""
+        shutil.copytree(ROOT / "scripts", self.repo / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        result = self.setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("runs at commit time", result.stdout)
+        for hook in ("pre-commit", "commit-msg"):
+            self.assertTrue(os.access(self.repo / ".git/hooks" / hook, os.X_OK), hook)
+        git = ["git", "-C", str(self.repo)]
+        (self.repo / "notes.md").write_text("fn_0c014070, 35,977 frames\n")
+        subprocess.run([*git, "add", "notes.md"], check=True)
+        clean = self.commit(self.repo, "Add notes")
+        self.assertEqual(clean.returncode, 0, clean.stdout + clean.stderr)
+        (self.repo / "vmu-a1.bin").write_bytes(b"\0" * 16)
+        subprocess.run([*git, "add", "vmu-a1.bin"], check=True)
+        refused = self.commit(self.repo, "Add a card")
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("NOT CLEAN", refused.stdout + refused.stderr)
+        subprocess.run([*git, "rm", "-q", "--cached", "vmu-a1.bin"], check=True)
+        refused = self.commit(self.repo, "Add notes\n\nhttps://" + "claude" + ".ai/code/session_x")
+        self.assertNotEqual(refused.returncode, 0)
+        self.assertIn("session link", refused.stdout + refused.stderr)
+        log = subprocess.run([*git, "log", "--format=%s"], capture_output=True, text=True, check=True).stdout
+        self.assertEqual(log.split(), ["Add", "notes"])
+
+    def test_it_leaves_a_hook_that_isnt_ours_alone(self):
+        shutil.copytree(ROOT / "scripts", self.repo / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        hook = self.repo / ".git/hooks/pre-commit"
+        hook.write_text("#!/bin/sh\nexit 0\n")
+        result = self.setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("isn't ours", result.stderr)
+        self.assertEqual(hook.read_text(), "#!/bin/sh\nexit 0\n")
+        self.assertTrue((self.repo / ".git/hooks/commit-msg").exists())
+
+    def test_it_installs_no_hooks_where_the_audit_isnt(self):
+        """A dream-recomp clone has its own checks and no audit_repo.py, so it gets no hooks."""
+        result = self.setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.repo / ".git/hooks/pre-commit").exists())
+        self.assertNotIn("runs at commit time", result.stdout)
 
 
 class FetchDreamRecomp(unittest.TestCase):

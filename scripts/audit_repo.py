@@ -112,6 +112,18 @@ def audit_commits(root: pathlib.Path, rev: str, words: list[str]) -> list[str]:
     return findings
 
 
+def audit_message(text: str, words: list[str]) -> list[str]:
+    """Findings for a commit message before the commit exists (the commit-msg hook). Lines starting
+    with '#' are git's comments, which it strips from the message after the hook."""
+    text = "\n".join(line for line in text.splitlines() if not line.startswith("#"))
+    findings = []
+    if SESSION_LINK.search(text):
+        findings.append("a Claude session link in the message")
+    if denied_words(text, words):
+        findings.append("a denied word in the message")
+    return findings
+
+
 def audit_file(path: pathlib.Path, rel: pathlib.PurePath, words: list[str] = ()) -> list[str]:
     findings = []
     if path.suffix.lower() in FORBIDDEN_SUFFIXES:
@@ -142,26 +154,44 @@ def audit_file(path: pathlib.Path, rel: pathlib.PurePath, words: list[str] = ())
     return findings
 
 
+USAGE = "usage: audit_repo.py [ROOT] [--commits REV] [--message FILE]"
+
+
+def option(args: list[str], name: str) -> str | None:
+    """Takes `name VALUE` out of args and returns VALUE, or None when name isn't there."""
+    if name not in args:
+        return None
+    at = args.index(name)
+    if at + 1 >= len(args):
+        print(USAGE, file=sys.stderr)
+        raise SystemExit(2)
+    value = args[at + 1]
+    del args[at:at + 2]
+    return value
+
+
 def main() -> int:
     args = sys.argv[1:]
-    rev = None
-    if "--commits" in args:
-        at = args.index("--commits")
-        if at + 1 >= len(args):
-            print("usage: audit_repo.py [ROOT] [--commits REV]", file=sys.stderr)
-            return 2
-        rev = args[at + 1]
-        del args[at:at + 2]
+    rev = option(args, "--commits")
+    # --message FILE checks that one commit message (the commit-msg hook) instead of the tracked files,
+    # which the pre-commit hook has audited just before.
+    message = option(args, "--message")
     root = pathlib.Path(args[0] if args else ".").resolve()
     words = denylist(root)
     if not words:
         print("note: no denylist (JGR_AUDIT_DENYLIST or .git/info/audit-denylist), so names went unchecked")
     problems = 0
-    for path in tracked_files(root):
-        rel = path.relative_to(root)
-        for finding in audit_file(path, rel, words):
-            print(f"{rel.as_posix()}: {finding}")
+    if message is not None:
+        text = pathlib.Path(message).read_text(encoding="utf-8", errors="replace")
+        for finding in audit_message(text, words):
+            print(f"{message}: {finding}")
             problems += 1
+    else:
+        for path in tracked_files(root):
+            rel = path.relative_to(root)
+            for finding in audit_file(path, rel, words):
+                print(f"{rel.as_posix()}: {finding}")
+                problems += 1
     if rev:
         for finding in audit_commits(root, rev, words):
             print(finding)

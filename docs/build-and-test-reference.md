@@ -72,8 +72,13 @@ and it made Windows drift from Linux at frame 51, so a MinGW build without FMA d
 `python3 -m unittest discover -s tests` passes, and `bash -n` and `shellcheck` pass on every script. The
 audit checks names only with a denylist: in a sandbox, write the maintainer's name to
 `.git/info/audit-denylist` (never a tracked file); CI reads it from the `AUDIT_DENYLIST` secret.
-`.github/workflows/ci.yml` runs the same on GitHub, which has no disc. A thread that changes only docs
-or scripts needs shellcheck alone (`apt-get install shellcheck`, which section 4 allows), not the
+`.github/workflows/ci.yml` runs the same on GitHub, which has no disc. In a clone of this repo,
+`scripts/08_git_setup.sh` also installs two hooks: `pre-commit` runs the file audit on the staged files,
+and `commit-msg` checks the message for a session link or a denied word
+(`audit_repo.py . --message FILE`), so a leak is stopped before a push publishes it; CI would catch it
+only after. The hooks can't check the author, committer or signature, which exist only once the commit
+is made, so the `--commits HEAD` audit still runs. A hook that isn't ours is left alone and named. A
+thread that changes only docs or scripts needs shellcheck alone (`apt-get install shellcheck`, which section 4 allows), not the
 toolchain and SDL3 builds of `scripts/09_setup_sandbox.sh`.
 
 **In dream-recomp:** on the exact tree, on Linux:

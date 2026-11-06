@@ -13,7 +13,9 @@ approval, asked for on a card. A pre-approved thread doesn't wait (`docs/project
 
 1. Run `git status`, `git diff --cached --stat` and `python3 scripts/audit_repo.py . --commits HEAD`,
    and confirm that nothing on the "never in the repo" list is staged. If `.gitignore` doesn't cover it,
-   tell me.
+   tell me. The hooks `scripts/08_git_setup.sh` installs run the file audit and the message check at
+   commit time too; they don't replace this step, because the author, committer and signature exist
+   only once the commit is made.
 2. Show me the full diff.
 3. Show me the proposed commit message.
 4. For a fix: the root cause and the model behind it, and its regression test. For a feature: where
