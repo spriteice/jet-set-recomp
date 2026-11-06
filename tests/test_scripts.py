@@ -457,6 +457,81 @@ class AuditCommits(unittest.TestCase):
         self.assertIn("a denied word", audit.audit_file(path, pathlib.PurePath("notes.md"), ["Pat"]))
 
 
+
+class AuditIndex(unittest.TestCase):
+    """The file audit reads what git has staged, which is what the next commit holds, and every kind of
+    entry the index can have: a file, a link, a submodule."""
+    TRACE = b"0c014070: 4f22 sts.l pr,@-r15\n"  # instruction text, which never goes in the repo
+
+    def setUp(self):
+        self.root = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.root)
+        subprocess.run(["git", "init", "-q", str(self.root)], check=True)
+        (self.root / "notes.md").write_text("text\n")
+        self.git("add", "notes.md")
+
+    def git(self, *args: str) -> str:
+        return subprocess.run(["git", "-C", str(self.root), *args], capture_output=True, check=True,
+                              text=True).stdout
+
+    def run_audit(self) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-I", str(ROOT / "scripts/audit_repo.py"), str(self.root)],
+                              capture_output=True, text=True)
+
+    def test_a_submodule_is_named_and_not_opened(self):
+        # dream-recomp's third_party/libchdr: the index holds another repository's commit, and the
+        # working tree a folder. The audit read that folder as a file and stopped with a traceback.
+        (self.root / "lib").mkdir()
+        self.git("update-index", "--add", "--cacheinfo", "160000,8e7b8bd32bc676b7e5c6b42fe7d2daca986c4a0d,lib")
+        result = self.run_audit()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("note: lib is a submodule, so its files weren't audited here", result.stdout)
+        self.assertIn("CLEAN", result.stdout)
+
+    def test_a_link_is_audited_as_git_stores_it(self):
+        # Git stores a link as the path it points to, so that path is what the repo holds: a link to
+        # a folder read as a file stopped the audit, and a link out of the repo had the file at its
+        # end audited as if it were committed.
+        outside = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, outside)
+        (outside / "trace.txt").write_bytes(self.TRACE)
+        (self.root / "docs").mkdir()
+        (self.root / "to-docs").symlink_to("docs")
+        (self.root / "to-trace").symlink_to(outside / "trace.txt")
+        self.git("add", "to-docs", "to-trace")
+        result = self.run_audit()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("CLEAN", result.stdout)
+        # and the path itself is checked like any content
+        (self.root / "to-session").symlink_to("claude" + ".ai/code/x")
+        self.git("add", "to-session")
+        result = self.run_audit()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("to-session: a Claude session link", result.stdout)
+
+    def test_what_is_staged_is_audited_not_the_working_tree(self):
+        # Staged with instruction text, then cleaned in the working tree only: the commit would hold
+        # the staged text, and the audit used to read the clean copy and pass it (git add -p, or an
+        # edit after git add).
+        notes = self.root / "notes.md"
+        notes.write_bytes(self.TRACE)
+        self.git("add", "notes.md")
+        notes.write_text("text\n")
+        result = self.run_audit()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("notes.md: instruction text", result.stdout)
+        # A file deleted from the working tree but still staged is still committed, and still read.
+        notes.unlink()
+        self.assertIn("notes.md: instruction text", self.run_audit().stdout)
+        # And an edit that isn't staged isn't in the commit, so it isn't a finding.
+        self.git("add", "notes.md")  # stages the deletion
+        (self.root / "other.md").write_text("text\n")
+        self.git("add", "other.md")
+        (self.root / "other.md").write_bytes(self.TRACE)
+        result = self.run_audit()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
 class GitSetup(unittest.TestCase):
     def setUp(self):
         self.folder = pathlib.Path(tempfile.mkdtemp())

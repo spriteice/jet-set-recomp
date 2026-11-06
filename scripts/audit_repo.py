@@ -3,10 +3,12 @@
 
     python3 scripts/audit_repo.py [ROOT] [--commits REV]
 
-Looks at what git tracks, plus what's staged, or at every file when ROOT isn't a git checkout. With
---commits, also checks every commit reachable from REV (HEAD, or origin/main..HEAD): its author and
-committer must be the project's identity, it must carry a signature (GitHub shows a commit Verified only
-then), and its message must hold no session link.
+Looks at what git has staged, which is what the next commit holds: each file's staged content (not
+the copy in the working tree, which can differ), a link by the path it points to (what git stores),
+and a submodule by name only, since its files are another repository's. Outside a git checkout it
+looks at every file under ROOT. With --commits, also checks every commit reachable from REV (HEAD, or
+origin/main..HEAD): its author and committer must be the project's identity, it must carry a signature
+(GitHub shows a commit Verified only then), and its message must hold no session link.
 
 Words that must never appear (the maintainer's name) are kept out of the repository, because a list
 here would publish them: they come from the JGR_AUDIT_DENYLIST environment variable (CI reads it from
@@ -23,6 +25,7 @@ import pathlib
 import re
 import subprocess
 import sys
+from typing import NamedTuple
 
 MAX_TEXT_BYTES = 1024 * 1024
 LICENCE_NAMES = {"LICENSE"}
@@ -58,13 +61,57 @@ DISASSEMBLY = re.compile(
     r"fmov(\.s)?|fadd|fmul|fmac)\s", re.M)
 
 
-def tracked_files(root: pathlib.Path) -> list[pathlib.Path]:
+# The index mode (git ls-files --stage) of a submodule: its entry is a commit of another repository,
+# with nothing here to read. A symbolic link's entry is a blob like a file's, holding the path it points
+# to, so it needs no case of its own.
+GITLINK_MODE = "160000"
+
+
+class Entry(NamedTuple):
+    path: pathlib.Path
+    mode: str  # the index mode, or "" outside a checkout
+    data: bytes | None  # the staged content, or None to read it from the path
+
+
+def staged_blobs(root: pathlib.Path, oids: list[str]) -> dict[str, bytes]:
+    """The objects git holds for these ids, read in one git process. An id git can't read is left
+    out, and its file is then read from the working tree instead."""
+    if not oids:
+        return {}
+    out = subprocess.run(["git", "-C", str(root), "cat-file", "--batch"],
+                         input="".join(oid + "\n" for oid in oids).encode(),
+                         capture_output=True, check=True).stdout
+    blobs, at = {}, 0
+    while at < len(out):
+        end = out.index(b"\n", at)
+        header = out[at:end].decode().split()
+        at = end + 1
+        if len(header) == 3:  # "<oid> <type> <size>", then the content and a newline
+            size = int(header[2])
+            if header[1] == "blob":
+                blobs[header[0]] = out[at:at + size]
+            at += size + 1
+    return blobs
+
+
+def tracked_files(root: pathlib.Path) -> list[Entry]:
+    """What the next commit holds, from the index (git ls-files --stage, which honours the temporary
+    index of `git commit -a` in a hook), or every file under root outside a checkout."""
     if (root / ".git").exists():
-        out = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--cached"],
+        out = subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--stage"],
                              capture_output=True, check=True).stdout
-        return [root / name.decode() for name in out.split(b"\0") if name]
-    return [path for path in root.rglob("*")
-            if path.is_file() and not SKIP_DIRS.intersection(path.relative_to(root).parts)]
+        staged = {}  # path -> [(mode, oid)]: a conflicted path's stages all count
+        for record in filter(None, out.split(b"\0")):
+            meta, name = record.split(b"\t", 1)
+            mode, oid, _stage = meta.decode().split()
+            staged.setdefault(os.fsdecode(name), []).append((mode, oid))
+        blobs = staged_blobs(root, sorted({oid for stages in staged.values()
+                                           for mode, oid in stages if mode != GITLINK_MODE}))
+        return [Entry(root / name, mode, None if mode == GITLINK_MODE else blobs.get(oid))
+                for name, stages in staged.items() for mode, oid in dict.fromkeys(stages)]
+    return [Entry(path, "", None) for path in root.rglob("*")
+            if (path.is_file() or path.is_symlink())
+            and not SKIP_DIRS.intersection(path.relative_to(root).parts)]
 
 
 def denylist(root: pathlib.Path) -> list[str]:
@@ -124,7 +171,10 @@ def audit_message(text: str, words: list[str]) -> list[str]:
     return findings
 
 
-def audit_file(path: pathlib.Path, rel: pathlib.PurePath, words: list[str] = ()) -> list[str]:
+def audit_file(path: pathlib.Path, rel: pathlib.PurePath, words: list[str] = (),
+               data: bytes | None = None) -> list[str]:
+    """Findings for one file: its name and folder, and its content, which is `data` when the caller
+    has it (what git staged) and otherwise read here, a link's being the path it points to."""
     findings = []
     if path.suffix.lower() in FORBIDDEN_SUFFIXES:
         findings.append("a disc, binary, card or capture file type")
@@ -132,9 +182,16 @@ def audit_file(path: pathlib.Path, rel: pathlib.PurePath, words: list[str] = ())
         findings.append("a name from the disc or the build")
     if FORBIDDEN_DIRS.intersection(part.lower() for part in rel.parts[:-1]):
         findings.append("in a folder for extracted, generated or run output")
-    if not path.exists():
-        return findings
-    data = path.read_bytes()
+    if data is None:
+        if path.is_symlink():
+            data = os.fsencode(os.readlink(path))
+        elif path.is_file():
+            data = path.read_bytes()
+        elif path.exists():
+            findings.append("a folder where a file is tracked, so its content went unchecked")
+            return findings
+        else:
+            return findings
     if b"\0" in data:
         findings.append("binary content")
         return findings
@@ -187,9 +244,14 @@ def main() -> int:
             print(f"{message}: {finding}")
             problems += 1
     else:
-        for path in tracked_files(root):
-            rel = path.relative_to(root)
-            for finding in audit_file(path, rel, words):
+        for entry in tracked_files(root):
+            rel = entry.path.relative_to(root)
+            if entry.mode == GITLINK_MODE:
+                # Named, so it isn't passed over in silence: its files are another repository's,
+                # which this audit doesn't reach (dream-recomp's third_party/libchdr is one).
+                print(f"note: {rel.as_posix()} is a submodule, so its files weren't audited here")
+                continue
+            for finding in audit_file(entry.path, rel, words, entry.data):
                 print(f"{rel.as_posix()}: {finding}")
                 problems += 1
     if rev:
