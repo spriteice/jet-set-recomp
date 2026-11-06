@@ -56,5 +56,7 @@ JSR-PC project.
 | The first SteamOS smoke test runs now: the pin-move build goes to both devices, a Linux package with `copy-disc.sh` for the Ally X alongside the Windows build | Claude proposed; Maintainer (card) | 6 Nov 01:28 |
 | Upstream dream-recomp is merged into our `main` at each phase exit, as a pin move with the full gate and baseline (`docs/upstream.md`), and `scripts/08_git_setup.sh` installs the audit as commit hooks | Claude proposed; Maintainer (card) | 6 Nov 01:28 |
 | Phase 6 adds a Windows-hosted build path (MSVC or clang-cl) and a timed clean-checkout build on both OSes by someone who isn't us | Claude proposed; Maintainer (card) | 6 Nov 01:28 |
+| The long-term goal includes the EU and Japanese Dreamcast releases, then HD textures from the PC version, with toggles so the player picks content from each (songs, localisation, HD textures). The discs are Jet Grind Radio (USA), Jet Set Radio (Europe) and De La Jet Set Radio (Japan) | Maintainer | 6 Nov 06:27, 06:39 |
+| Groundwork for the other releases now, and their discs mapped from phase 5's start (`reviews/multi-region-plan-2026-11-06.md`, shared folder). Meanwhile nothing new is designed USA-only: the first hook names its release by the boot file's hash, and the texture cache keys textures by their data's hash | Claude proposed; Maintainer (card) | 6 Nov 06:36 |
 
-Not decided yet: version names, and whether other disc releases are ever added.
+Not decided yet: version names.

@@ -165,7 +165,8 @@ alongside. The reasons, from how other recompilation projects ordered their work
      volumes (shadows, 1), because their stencil pass reads the depth that bug 6's fix changes; the
      game uses them in every 3D frame (39 opaque and 1 translucent in the last frame of w1). Then
      texture formats and palettes (7, 8), the texture cache (5), and the sparks (9) if they're the
-     renderer's.
+     renderer's. The texture cache keys each texture by a hash of its data, not its address, so a
+     replacement pack can work across releases later (phase 5, "Other releases").
    - Exit: bugs 1 and 5 to 9 fixed and passed on both devices, each with a pixel count on a capture
      (the method in `depth-fix/diagnosis.md`) and against its reference frame.
 5. **The whole game.**
@@ -180,6 +181,18 @@ alongside. The reasons, from how other recompilation projects ordered their work
      with the fallback off, passes the gate and the matrix too (upstream builds both configurations in
      CI so the fallback never becomes load-bearing); full speed with headroom measured on the Ally X in
      Game Mode.
+   - Other releases (the maintainer, 6 Nov 06:36): the EU and Japanese Dreamcast discs join here, once
+     phases 1 to 4 have fixed the shared code on the USA disc. Each first does its own phase 1 (seeds and
+     relocations, recordings, gate scenarios and baseline runs: nothing of USA's carries over to another
+     binary) and phase 2 check, then joins the acceptance matrix as a release column, and the exit counts
+     its rows too. Content toggles (songs, localisation) follow, then HD textures from the PC version.
+     The maintainer's discs are Jet Grind Radio (USA), Jet Set Radio (Europe) and De La Jet Set Radio
+     (Japan), the 2001 release built from the EU one (6 Nov 06:39). Until then nothing new is designed
+     USA-only: the first hook names the release its addresses belong to, by the boot file's hash, and a
+     launcher refuses another release's hook table with a message that says so; the texture cache keys by
+     data (phase 4). The two new discs are measured without building, before phase 5: their hashes, a
+     discovery-only coverage report for each boot file, and a diff of the three discs' file listings, all
+     metadata. The plan: `reviews/multi-region-plan-2026-11-06.md` in the shared folder.
 6. **Speed, OpenGL and release.** Rebuild cost, unless phase 1 took it (it didn't: four full builds):
    each config change re-emits 81 MB of C++ in one unit and takes about 15 minutes. OpenGL 3.3 core, as
    its own milestone. The player's build: a release is source only, so the build is what a player
