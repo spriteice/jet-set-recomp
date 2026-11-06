@@ -157,7 +157,8 @@ def fake_checkout(folder: pathlib.Path) -> pathlib.Path:
     jgr_boot.write_text('#!/bin/sh\necho "$@" > ran.txt\n')
     jgr_boot.chmod(0o755)
     (folder / "prefix/lib").mkdir(parents=True)
-    (folder / "prefix/lib/libSDL3.so.0").write_text("")
+    # Stands in for the library: holds one sound system's looked-up name, as a real one does.
+    (folder / "prefix/lib/libSDL3.so.0").write_bytes(b"\0pw_init\0")
     dream = root / "third_party/dream-recomp"
     (dream / "tools/dcdisc/dcdisc").mkdir(parents=True)
     (dream / "tools/dcdisc/dcdisc/__init__.py").write_text("")
@@ -346,6 +347,46 @@ class PackageRefusals(unittest.TestCase):
         result = self.package()
         self.assertEqual(result.returncode, 1)
         self.assertIn("build it first", result.stderr)
+
+    def test_a_library_with_no_sound_system_is_refused_before_anything_is_copied(self):
+        # The library SDL3 builds without the ALSA, PulseAudio and PipeWire headers: it names the
+        # systems in its hint text but looks nothing up in them (known bug 21).
+        library = self.folder / "prefix/lib/libSDL3.so.0"
+        library.write_bytes(b"\0pulseaudio\0dummy\0disk\0")
+        result = self.package()
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn("no audio backend", result.stderr)
+        self.assertIn(str(library), result.stderr)
+        self.assertFalse(self.out.exists())
+
+
+class CheckSdlAudio(unittest.TestCase):
+    check = load("21_check_sdl_audio")
+
+    def test_a_looked_up_name_proves_its_backend(self):
+        self.assertEqual(self.check.backends(b"\0snd_pcm_open\0pw_init\0"), ["alsa", "pipewire"])
+        self.assertEqual(self.check.backends(b"DirectSoundCreate8"), ["directsound"])
+
+    def test_a_system_named_but_not_looked_up_proves_nothing(self):
+        self.assertEqual(self.check.backends(b"\0alsa\0pulseaudio\0pipewire\0directsound\0"), [])
+
+    def test_the_command_names_the_backends_or_refuses(self):
+        with tempfile.TemporaryDirectory() as folder:
+            library = pathlib.Path(folder, "libSDL3.so.0.2.24")
+            library.write_bytes(b"\0pa_context_new\0")
+            result = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/21_check_sdl_audio.py"), str(library)],
+                                    capture_output=True, text=True)
+            self.assertEqual((result.returncode, result.stdout), (0, "libSDL3.so.0.2.24: audio backends pulseaudio\n"))
+            library.write_bytes(b"\0dummy\0")
+            result = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/21_check_sdl_audio.py"), str(library)],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1)
+            self.assertIn(f"{library} has no audio backend", result.stderr)
+            self.assertIn("09_setup_sandbox.sh", result.stderr)
+            result = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/21_check_sdl_audio.py"), f"{folder}/none"],
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("not a file", result.stderr)
 
 
 class BuildScripts(unittest.TestCase):

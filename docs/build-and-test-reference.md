@@ -159,7 +159,10 @@ only a device step there shows the real bar.
 
 One folder per build, named `<date>-<commit>-pin-<pin>-<topic>`, where `<pin>` is the first 7 digits
 of the dream-recomp commit it was built on, so a build on an unpushed dream-recomp change says
-which. It's made new with `scripts/20_package.sh`, which refuses a folder that isn't empty. The
+which. It's made new with `scripts/20_package.sh`, which refuses a folder that isn't empty and an
+SDL3 library with no sound system in it (`scripts/21_check_sdl_audio.py`: SDL3 opens ALSA, PulseAudio
+and PipeWire at run time, so one built without their headers is silent without a word, known bug 21;
+`scripts/09_setup_sandbox.sh` installs the headers and runs the same check on what it built). The
 package as the sandbox makes it holds no disc file and no boot file, because nothing from the disc
 leaves the sandbox; `setup.sh` or `setup.bat` makes those from the disc, and `copy-disc.sh` copies
 the disc in first.

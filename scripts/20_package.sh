@@ -23,6 +23,13 @@ case "$platform" in
     *) echo "usage: $0 linux|windows OUT_FOLDER" >&2; exit 2 ;;
 esac
 [ -f "$program" ] || { echo "No $program: build it first." >&2; exit 1; }
+case "$platform" in
+    linux) sdl="$(readlink -f "${DREAM_LINUX_PREFIX:-$HOME/linux/prefix}/lib/libSDL3.so.0")" ;;
+    windows) sdl="${DREAM_WIN_PREFIX:-$HOME/win/prefix}/bin/SDL3.dll" ;;
+esac
+# An SDL3 built without a sound system plays silence without a word (known bug 21): refused here,
+# before anything is copied, rather than found on the device.
+python3 "$root/scripts/21_check_sdl_audio.py" "$sdl"
 
 mkdir -p "$out/licences" "$out/tools"
 case "$platform" in
