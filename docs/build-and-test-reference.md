@@ -18,10 +18,13 @@ How builds of Jet Set Recomp are made, checked, delivered and reported. It's wri
   GitHub CI run installs them from there. The server is used only to update that copy, when a package
   needs it (section 4 of the instructions). The audit flags the server in any script, workflow or
   config here, so the copy's own update script lives with the copy.
-- **My PC,** through Remote Control and only for what needs Windows itself, such as running a Windows
-  build. Everything is under `E:\Games\Ports\jsr\DC`: the disc in `Game Files\Dreamcast\`, builds in
-  `Building\`. Before anything heavy, read `E:\Games\Ports\jsr\PC-IN-USE.md`, add a row saying whether a
-  window opens and for how long, and remove it when done. Nothing is installed, committed or pushed
+- **My PC,** through folder access for files (reading, copying, writing the claim) and Remote Control
+  for running anything, and only for what needs the PC itself, such as running a Windows build or
+  copying the disc. Everything is under `E:\Games\Ports\jsr\DC`: the disc in `Game Files\Dreamcast\`, builds in
+  `Building\`. Before anything heavy, read the claim file,
+  `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, add a line saying whether a window opens
+  and for how long, and move it to `PC-HISTORY.md` beside it when done (`docs/status.md`, "Things that
+  bite", has the protocol). Nothing is installed, committed or pushed
   from there. The `jsrf-build` WSL distribution there belongs to another project: don't use it.
 
 A session on the PC uses Git for Windows by full path (`C:\Program Files\Git\cmd\git.exe`), because
@@ -32,11 +35,12 @@ devkitPro's MSYS2 git comes first on PATH. It calls `cmd.exe` by full path too
 ## The disc in a sandbox
 
 Unit tests and CI don't need it. Builds do (the translator reads `1ST_READ.BIN`), and so do boot runs.
-Track 3 is over the 400 MB copy limit, so, through Remote Control on the PC, in Git Bash, split it in a
-scratch folder outside `Game Files\` (`split -b 300M -d "Track 3.bin" track3.part.`), copy the parts,
-rejoin them in the sandbox (`cat track3.part.* > "Track 3.bin"`), and run
-`scripts/00_verify_inputs.sh`. Delete the parts from the PC afterwards (approved, `docs/decisions.md`),
-and never touch the disc files themselves. Everything from the disc stays in that sandbox.
+Track 3 is over the 400 MB copy limit, so split it on the PC in a scratch folder outside `Game Files\`,
+through folder access or in Git Bash through Remote Control
+(`split -b 300M -d "Track 3.bin" track3.part.`), copy the parts, rejoin them in the sandbox
+(`cat track3.part.* > "Track 3.bin"`), and run `scripts/00_verify_inputs.sh`. Delete the parts from the
+PC afterwards (approved, `docs/decisions.md`), and never touch the disc files themselves. Everything from
+the disc stays in that sandbox.
 
 ## Trying an unpushed dream-recomp change
 

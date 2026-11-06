@@ -58,5 +58,7 @@ JSR-PC project.
 | Phase 6 adds a Windows-hosted build path (MSVC or clang-cl) and a timed clean-checkout build on both OSes by someone who isn't us | Claude proposed; Maintainer (card) | 6 Nov 01:28 |
 | The long-term goal includes the EU and Japanese Dreamcast releases, then HD textures from the PC version, with toggles so the player picks content from each (songs, localisation, HD textures). The discs are Jet Grind Radio (USA), Jet Set Radio (Europe) and De La Jet Set Radio (Japan) | Maintainer | 6 Nov 06:27, 06:39 |
 | Groundwork for the other releases now, and their discs mapped from phase 5's start (`reviews/multi-region-plan-2026-11-06.md`, shared folder). Meanwhile nothing new is designed USA-only: the first hook names its release by the boot file's hash, and the texture cache keys textures by their data's hash | Claude proposed; Maintainer (card) | 6 Nov 06:36 |
+| The PC's one claim file is `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, for every project that uses the PC; `E:\Games\Ports\jsr\PC-IN-USE.md` is no longer used. This replaces the claim file of 5 Nov 00:51 | Maintainer | 6 Nov 06:49 |
+| Threads work on the PC through folder access for files (reading, copying, writing the claim) and through Remote Control for running anything; this widens "only through Remote Control" in the rules | Claude proposed; Maintainer (card) | 6 Nov 06:59 |
 
 Not decided yet: version names.
