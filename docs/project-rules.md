@@ -44,7 +44,8 @@ Decide this first.
    Never make up in one layer for a bug in another.
 3. **Never edit generated files.** Fix the source, then re-emit.
 4. **dream-recomp's code is ours to change,** on `spriteice/dream-recomp`'s `main`, with its credit kept
-   and its pin moved in a commit of its own (`docs/upstream.md`).
+   and its pin moved in a commit of its own, and upstream's own progress merged in at each phase exit
+   (`docs/upstream.md`).
 5. **Config entries are measured.** Each seed or relocation comes from a run, says in a comment what it
    is and how it was found, and is checked with the regression gate. A mid-function address the
    runtime resolves itself isn't seeded.

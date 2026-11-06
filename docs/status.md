@@ -74,8 +74,9 @@ past the TIME OVER screen.
 Six phases, in order, adopted by the maintainer on 5 November (`docs/decisions.md`). A phase ends only
 when its exit is shown, with numbers. Work that changes no code, such as a device smoke test, can run
 alongside. The reasons, from how other recompilation projects ordered their work, are in
-`reviews/recomp-work-order-2026-11-05.md` in the shared folder, and `release-prep/roadmap.md` there
-puts each milestone in its phase.
+`reviews/recomp-work-order-2026-11-05.md` in the shared folder, with the second pass of 6 November in
+`reviews/recomp-work-order-second-pass-2026-11-06.md` there (the maintainer adopted its refinements,
+`docs/decisions.md`), and `release-prep/roadmap.md` there puts each milestone in its phase.
 
 1. **Map the code (now):** a full coverage pass, before any renderer work.
    - Entry: done 6 November. Bug 11's three dream-recomp fixes (`known-bugs.md`, 11) rechecked,
@@ -110,25 +111,47 @@ puts each milestone in its phase.
      here. It's a restructure with no change in behaviour, shown by an identical gate.
 2. **Tell translation faults from renderer faults.**
    - Entry: phase 1's exit, and recorded runs that reach each drawing bug's spot: the Shibuya
-     Terminal road, the Garage, a grind, and sparks.
+     Terminal road, the Garage, a grind, and sparks. The first recording (the tutorial in the Garage,
+     mission 1 in Shibuya-cho) likely reaches all four: confirm that at the start rather than record
+     more.
    - Work: replay each recorded run translated and with `--interpret`, and compare the per-frame write
-     hashes and the TA capture at each bug's spot. A match puts the bug in the renderer. A difference
-     puts it in translation, and it goes back to phase 1 with a test.
+     hashes and the TA capture at each bug's spot. A match clears the translator. A difference puts
+     the bug in translation, and it goes back to phase 1 with a test.
+   - What the oracle can't see: the interpreter is dream-recomp's own, built from the same decoder and
+     instruction semantics as the translator (its ADR 2), so a match can't show a bug both share: a
+     decoder table, an instruction's semantics, FPSCR mode handling. Those parts are what upstream's
+     differential harness checks against Flycast's interpreter (its ADR 12; `docs/upstream.md`), so
+     the risk is small, not zero. A match means "not the translator", not "the renderer": when a
+     renderer fix in phase 4 doesn't move a bug, the next suspect is the shared CPU model, checked
+     against Flycast, not a second renderer theory.
    - Exit: every recorded run's write hashes match the interpreted run's, or each difference is
      explained; bugs 5, 7, 8 and 9 each say "translation" or "renderer" in `known-bugs.md`.
-   - Not measured yet: how long `--interpret` takes over a 5-minute recorded run.
+   - Not measured yet: how long `--interpret` takes over the 1,109 s recording. The first thread with
+     the pinned build and the recording measures it.
 3. **Runtime and platforms.**
-   - Entry: phase 1's exit. The first SteamOS smoke test can run any time, since it changes no code.
-     The next Linux build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to
-     see that its error dialog shows.
+   - Entry: phase 1's exit. The first SteamOS smoke test runs now, on the pin-move build, which goes
+     to both devices: a Windows build on the PC, and a Linux package with `copy-disc.sh` for the Ally X
+     (the maintainer, 6 Nov 01:28). It changes no code, and nothing has run on SteamOS yet. That Linux
+     build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to see that its
+     error dialog shows.
    - Work: pacing while unfocused (`known-bugs.md`, 10), and the sparks (9) if phase 2 puts them in
      game timing. SteamOS in Desktop Mode and Game Mode. Sound through a device, a controller, and a
      30-minute session.
-   - Exit: bug 10 fixed with a test; a recorded run replays on the Ally X in Game Mode with 0 faults;
-     presented frames per second logged with the window focused and unfocused.
+   - Exit: bug 10 fixed with a test, and pacing measured on both devices, because it depends on the
+     host (Zelda64Recomp was still fixing pacing fifteen months after its release); a recorded run
+     replays on the Ally X in Game Mode with 0 traps and 0 unmapped accesses; presented frames per
+     second logged with the window focused and unfocused, on both devices. Phase 5 re-measures pacing
+     on every stage.
 4. **The renderer, one hardware feature at a time.** Each fix gets a unit test on a synthetic TA list
-   that fails without it, because the gate doesn't see drawing, and a device step at the spot.
-   - Entry: phase 2 has put the bug in the renderer, and phase 3 has fixed pacing.
+   that fails without it, because the gate doesn't see drawing, and a device step at the spot. Where
+   one fits, the list comes from a KOS `pvr` example: open source, no game data, and what dream-recomp
+   measures its own renderer against, with Flycast's PVR test scenes (its WP2.3).
+   - Entry: phase 2 has put the bug in the renderer, and phase 3 has fixed pacing. For each bug, a
+     reference frame at its spot from the disc running on Flycast or a Dreamcast, kept on the PC and
+     never in a repo: without one, "fixed" means "looks right to us". And the run log says which
+     renderer path each device takes, per-pixel or per-strip (dream-recomp's ADR 9: the per-pixel path
+     needs GPU features, so the fallback stays), because the RTX 2080 Ti and the Ally X may run two
+     paths, and a fix has to be right in both.
    - Order: depth for the translucent list first (`known-bugs.md`, 6; the paused fix and its tests are
      in the shared folder's `depth-fix/`, to re-test on phase 1's function boundaries). Then modifier
      volumes (shadows, 1), because their stencil pass reads the depth that bug 6's fix changes; the
@@ -136,16 +159,27 @@ puts each milestone in its phase.
      texture formats and palettes (7, 8), the texture cache (5), and the sparks (9) if they're the
      renderer's.
    - Exit: bugs 1 and 5 to 9 fixed and passed on both devices, each with a pixel count on a capture
-     (the method in `depth-fix/diagnosis.md`).
+     (the method in `depth-fix/diagnosis.md`) and against its reference frame.
 5. **The whole game.**
    - Entry: phases 1 to 4.
-   - Work: every stage played on both devices and recorded, each recording added to the gate. A new
-     untranslated call goes back to phase 1, and a new drawing bug to phase 2.
-   - Exit: every stage with 0 faults and 0 untranslated calls; then releases drop the interpreter
-     fallback (`docs/decisions.md`); full speed with headroom measured on the Ally X in Game Mode.
-6. **Speed, OpenGL and release.** Rebuild cost, unless phase 1 took it: each config change re-emits
-   81 MB of C++ in one unit and takes about 15 minutes. OpenGL 3.3 core, as its own milestone. The
-   release checklist (`docs/release-checklist.md`). Any enhancements the maintainer wants come last.
+   - Work: first the acceptance matrix, a table of stage by device by mode (Windows; the Ally X in
+     Desktop Mode and in Game Mode), so "done" is a count of green rows, as dream-recomp's own plan
+     (its WP3.4) and other ports do. Then every stage played on both devices and recorded, each
+     recording added to the gate, and pacing re-measured on each. A new untranslated call goes back to
+     phase 1, and a new drawing bug to phase 2.
+   - Exit: every row green, with 0 traps, 0 unmapped accesses and 0 untranslated calls on every stage;
+     then releases drop the interpreter fallback (`docs/decisions.md`), and the release configuration,
+     with the fallback off, passes the gate and the matrix too (upstream builds both configurations in
+     CI so the fallback never becomes load-bearing); full speed with headroom measured on the Ally X in
+     Game Mode.
+6. **Speed, OpenGL and release.** Rebuild cost, unless phase 1 took it (it didn't: four full builds):
+   each config change re-emits 81 MB of C++ in one unit and takes about 15 minutes. OpenGL 3.3 core, as
+   its own milestone. The player's build: a release is source only, so the build is what a player
+   gets, and today it runs on Linux alone (Windows is cross-compiled). Phase 6 adds a Windows-hosted
+   build (MSVC or clang-cl, as upstream's own CI builds Windows x64), documented in the README, and a
+   timed build from a clean checkout on both OSes by someone who isn't us, before the release
+   checklist (`docs/release-checklist.md`) runs (the maintainer, 6 Nov 01:28). Any enhancements the
+   maintainer wants come last.
 
 ## Things that bite
 
