@@ -1,13 +1,13 @@
 # Status
 
-The project's durable notes: where the work stands and what's next. Keep this current. Updated 6
+The project's durable notes: where the work stands and what's next. Keep this current. Updated 7
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
 ## Where it stands
 
 - **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
-  `data/dream-recomp.pin` is `d990818` (6 November): the four up to `6c098df`, then `697bfc8` (each
+  `data/dream-recomp.pin` is `3023c32` (7 November): the four up to `6c098df`, then `697bfc8` (each
   block's exit written once, `known-bugs.md` 13), `cdd66be` (dcdisc across drives, 14), the seven
   of 6 November, approved on cards: bug 11's three translator fixes (`6c6cc9f`, `8e409b0`, `ab1faa7`),
   constant propagation past a reload (`ef7c0a6`, bug 17), discovery's blocks cut into basic blocks
@@ -18,15 +18,21 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   three CI fixes (`a205ea9`, `45bbffe`, `782469f`: tests and the gate's launcher lookup, known bugs
   28 and 29), and four window fixes: a present semaphore per swapchain image (`c1016c5`, bug 25), a
   failed window stopping the run with its error (`da5830c`, 26), a staging buffer per frame in flight
-  (`b76cc75`, 34), and the vertical-blank hook holding its pacer instead of a dead local (`d990818`,
-  35, the cause of 23's crash). The translator is `b222a6a`'s, and nothing after it reaches a headless
-  run. The build on this pin matches `data/baseline.json` on all five runs on every count, the two
-  memory-card runs at 0 untranslated call targets (from 2 before `b222a6a`, bug 11's cause B), and the
-  gate's three scenarios are identical to the capture on `782469f`. The gate's write hash changed
+  (`b76cc75`, 34), the vertical-blank hook holding its pacer instead of a dead local (`d990818`,
+  35, the cause of 23's crash), and two floating-point fixes of 7 November: the runtime's own hooks
+  and the run's end in the host's mode (`56a4277`, bug 37, so the run report rounds to nearest), and
+  the game started in the mode the disc's bootstrap hands over, FPSCR `0x00040000`, round to nearest,
+  where it was `0x00040001`, toward zero (`3023c32`, bug 36: the intro demo now matches Flycast step
+  for step). The translator is `b222a6a`'s. Bug 36's fix changes the game's arithmetic, and the
+  maintainer approved the new counts with this pin: the four 10-minute runs keep every count but
+  interrupts and non-zero sound samples (35,977 frames, 0 traps, 0 unmapped, 0 untranslated each, the
+  two memory-card runs at 0 untranslated since `b222a6a`, bug 11's cause B), and the gate's attract and
+  gameplay scenarios changed hash and counters with it, at 0 traps, 0 unmapped, 0 untranslated. The
+  recorded play-through no longer replays its recording (next point). The gate's write hash changed
   from frame 83 on at `b222a6a` with identical counters: the interrupt is delivered at a different
   boundary of the re-cut code and nothing else moves (`review-packs/bug-11-translator/REVIEW.md` in
   the shared folder, "The frame-83 hash change"); the maintainer accepted it with that pin move.
-  Nothing is ahead of the pin on dream-recomp `main` (6 November, 15:30 UTC).
+  Nothing is ahead of the pin on dream-recomp `main` (7 November, 08:00 UTC).
 - **The disc is in a sandbox and the first play-through is recorded.** The maintainer's tutorial-and-
   mission-1 recording (`data/recordings/2026-11-05-tutorial-mission1.txt`, inputs only; the original
   and its report in the shared folder's `recordings/`) is 66,516 frames with 0 traps, 0 unmapped and
@@ -34,7 +40,12 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   block writes) once its frame numbers are lowered by one, which the committed file is: the launcher
   that recorded it wrote each frame's line before reading the controls (bug 18, fixed in `b222a6a`).
   It is `runs.tutorial_mission1_replay` in `data/baseline.json` and, since pin `98bb9fa`, the gate's
-  third scenario (`tutorial_mission1`, by `--replay`), whose hash equals the hand replay's.
+  third scenario (`tutorial_mission1`, by `--replay`), whose hash equals the hand replay's. It was
+  recorded while the game rounded toward zero, so since pin `3023c32` its inputs stop fitting the
+  game: replayed, it reads unmapped memory from frame 52,858 (463,467,923 accesses, `known-bugs.md`
+  40), makes one untranslated call target (39) and never saves. Its baseline entry is marked
+  `stale_since`, and the maintainer re-records the tutorial and mission 1 on a build with the fix
+  (test build `2026-11-07-191c64b-pin-3023c32-test-windows`, whose `TESTING.md` has the steps).
 - **The game is playable on Windows.** The maintainer played build `2026-11-05-e06a4f9-pin-2013fb7`
   (named with old hashes, `docs/commit-map.md`) on the PC on 5 November: music, saving, loading, the
   tutorial and entering the first level work. Its run
@@ -56,7 +67,8 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   the vertical-blank hook writing a dead local, not the swapchain. The run reports print those ratios
   as 0.9x: their decimals round toward zero under the guest's FPU mode (37). From Konsole the
   controller does nothing, as with other ports: Steam holds it in Desktop Mode (38). Open there: the
-  attract demo plays out of step (36), and the drawing bugs above. The older Linux packages in the
+  drawing bugs above. The attract demo that played out of step (36) is fixed at pin `3023c32`, not yet
+  seen on a device. The older Linux packages in the
   shared folder's `builds/` and the 1.2 GB `Building\2026-11-05-de56e83-linux-ready.tar` on the PC are
   superseded.
 
@@ -123,10 +135,11 @@ alongside. The reasons, from how other recompilation projects ordered their work
      code, though 559 of the small runs are `mova`-loaded constants, mostly floats, so about 2.2 KB of
      those bytes are data: `mapping/measure/refs-all-2026-11-06.md` in the shared folder);
      every indirect site classed (257 switch tables, 724 resolved at run time through the function
-     table, 4 out of image, which are the exception path's own jumps); one of the two recordings made
-     and replaying with 0 untranslated, 0 traps, 0 unmapped; all four 10-minute runs match the
+     table, 4 out of image, which are the exception path's own jumps); all four 10-minute runs match the
      baseline; the gate's hash change accepted; the gate's replay scenario in since pin `98bb9fa`.
-     Open: the second recording (the first stage, 5 minutes or more).
+     Open: both recordings. The first, made on 5 November, replayed with 0 untranslated, 0 traps and
+     0 unmapped until pin `3023c32` (bug 36's fix) changed the game's rounding, and is stale since; it
+     is re-recorded on a build with the fix, with the second (the first stage, 5 minutes or more).
    - If the pass needs more than about ten re-emits, splitting the generated unit (phase 6) moves
      here. It's a restructure with no change in behaviour, shown by an identical gate.
 2. **Tell translation faults from renderer faults.**

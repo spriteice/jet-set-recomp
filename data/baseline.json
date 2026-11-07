@@ -17,10 +17,10 @@
       "unmapped_accesses": 0,
       "untranslated_call_targets": 0,
       "linux_sandbox_speed_x": 1.6,
-      "interrupts": 228345,
+      "interrupts": 228472,
       "renders": 17927,
       "gdrom_sectors": 26023,
-      "sound_samples_nonzero": 21975158,
+      "sound_samples_nonzero": 21981140,
       "sound_samples_total": 26460860,
       "reproduced_on": [
         "Linux sandbox, run r10, 1.7x real time, 4 Nov 2026",
@@ -29,7 +29,8 @@
         "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 782469f, 2.0x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin d990818, 1.9x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin d990818, 1.9x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 3023c32, 2.2x real time, 7 Nov 2026: 228,472 interrupts (was 228,345) and 21,981,140 non-zero sound samples (was 21,975,158), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged"
       ]
     },
     "presses": {
@@ -40,10 +41,10 @@
       "unmapped_accesses": 0,
       "untranslated_call_targets": 0,
       "linux_sandbox_speed_x": 1.8,
-      "interrupts": 237943,
+      "interrupts": 237919,
       "renders": 17927,
       "gdrom_sectors": 26392,
-      "sound_samples_nonzero": 25017321,
+      "sound_samples_nonzero": 25018724,
       "sound_samples_total": 26460860,
       "reproduced_on": [
         "Linux sandbox, run r11, 1.9x real time, 4 Nov 2026",
@@ -52,7 +53,8 @@
         "Linux sandbox, build on pin b222a6a, 2.1x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 98bb9fa, 2.1x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 782469f, 2.2x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin d990818, 2.1x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin d990818, 2.1x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 3023c32, 2.4x real time, 7 Nov 2026: 237,919 interrupts (was 237,943) and 25,018,724 non-zero sound samples (was 25,017,321), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged"
       ]
     },
     "no_input_vmu": {
@@ -65,18 +67,19 @@
       "untranslated_call_targets": 0,
       "linux_sandbox_speed_x": 1.9,
       "windows_pc_speed_x": 2.4,
-      "interrupts": 229696,
+      "interrupts": 229640,
       "renders": 17927,
       "gdrom_sectors": 26181,
       "memory_card": "15 block reads, 0 block writes, 1 media-info reads, 1 screen writes",
-      "sound_samples_nonzero": 22269385,
+      "sound_samples_nonzero": 22273962,
       "sound_samples_total": 26460860,
       "reproduced_on": [
         "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026",
         "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026: 0 untranslated call targets since this pin (bug 11's fix), from 2 at 0x0c28ed8a and 0x0c28ed94",
         "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 782469f, 1.9x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin d990818, 1.9x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin d990818, 1.9x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 3023c32, 2.2x real time, 7 Nov 2026: 229,640 interrupts (was 229,696) and 22,273,962 non-zero sound samples (was 22,269,385), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged"
       ]
     },
     "presses_vmu": {
@@ -89,18 +92,19 @@
       "untranslated_call_targets": 0,
       "linux_sandbox_speed_x": 1.9,
       "windows_pc_speed_x": 2.4,
-      "interrupts": 230355,
+      "interrupts": 230397,
       "renders": 17927,
       "gdrom_sectors": 26218,
       "memory_card": "15 block reads, 0 block writes, 1 media-info reads, 1 screen writes",
-      "sound_samples_nonzero": 25242025,
+      "sound_samples_nonzero": 25243427,
       "sound_samples_total": 26460860,
       "reproduced_on": [
         "Windows 11, i7-10700K, build 2026-11-05-e4cc456-pin-2013fb7-windows (the same code as the Linux package 2026-11-05-de56e83), 2.4x real time, 5 Nov 2026",
         "Linux sandbox, build on pin b222a6a, 1.9x real time, 6 Nov 2026: 0 untranslated call targets since this pin (bug 11's fix), from 2 at 0x0c28ed8a and 0x0c28ed94",
         "Linux sandbox, build on pin 98bb9fa, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 782469f, 2.0x real time, 6 Nov 2026",
-        "Linux sandbox, build on pin d990818, 1.8x real time, 6 Nov 2026"
+        "Linux sandbox, build on pin d990818, 1.8x real time, 6 Nov 2026",
+        "Linux sandbox, build on pin 3023c32, 2.1x real time, 7 Nov 2026: 230,397 interrupts (was 230,355) and 25,243,427 non-zero sound samples (was 25,242,025), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged"
       ]
     },
     "tutorial_mission1_replay": {
@@ -125,8 +129,9 @@
         "Linux sandbox, build on pin 98bb9fa, 1.8x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 782469f, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin d990818, 1.8x real time, 6 Nov 2026"
-      ]
+      ],
+      "stale_since": "pin 3023c32 (7 Nov 2026): the recording was made while the runtime started the game rounding toward zero, and with bug 36's fix the game rounds to nearest, so the recorded inputs stop fitting it. Replayed on 3023c32: 66,549 frames, 0 traps, 1 untranslated call target (known bug 39), 463,467,923 unmapped accesses from frame 52,858 (known bug 40), 44,957 GD-ROM sectors, 15 card block reads and 0 writes. The counts above are the pin d990818's and stay until the maintainer's new recording on a build with the fix replaces this entry"
     }
   },
-  "built_from": "dream-recomp d990818b6f87, this repo's pin, built with scripts/10_build_linux.sh on 6 Nov 2026: on top of 98bb9fa (the gate's replay scenario, tools/regress only), the window's pacing (8df9635) and swapchain (86e2b2a) fixes, three CI fixes (a205ea9, 45bbffe, 782469f: tests and the gate's launcher lookup), and four window fixes (c1016c5, da5830c, b76cc75, d990818: a present semaphore per swapchain image, a failed window stopping the run, a staging buffer per frame in flight, the vertical-blank hook's pacer held in its closure). A headless run reaches none of them, and the translator is b222a6a's, so every number here is b222a6a's: the seven commits that close known bugs 11, 12, 15, 17, 18 and 19 (five translator fixes, two run-log fixes). The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
+  "built_from": "dream-recomp 3023c320a264, this repo's pin, built with scripts/10_build_linux.sh on 7 Nov 2026: on top of d990818, the host's floating-point mode for the runtime's own hooks and the run's end (56a4277, known bug 37; no guest arithmetic changes, the gate identical) and the boot's floating-point mode (3023c32, known bug 36: FPSCR 0x00040000, round to nearest, as the disc's bootstrap hands over, where it was 0x00040001). Bug 36's fix changes the game's arithmetic: the four 10-minute runs keep every count but interrupts and non-zero sound samples, and the recorded play-through no longer replays its recording (runs.tutorial_mission1_replay.stale_since). The translator is b222a6a's: discovery gives 12,184 functions, 756,050 instructions, 216 switch tables and 1,263,576 of 1,495,698 bytes, as at every pin since. The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
 }
