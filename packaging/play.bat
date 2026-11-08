@@ -1,4 +1,5 @@
 @echo off
+rem SPDX-License-Identifier: GPL-2.0-only
 cd /d "%~dp0"
 rem The game cannot start without the files setup makes from your disc, so say so instead of failing silently.
 if not exist disc.gdi goto :nosetup

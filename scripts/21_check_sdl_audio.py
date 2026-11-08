@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Refuse an SDL3 library that can make no sound.
 
     python3 scripts/21_check_sdl_audio.py LIBRARY

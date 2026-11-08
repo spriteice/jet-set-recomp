@@ -42,4 +42,18 @@ The build takes about 15 minutes. `scripts/11_build_windows.sh` cross-builds for
 ## Credits
 
 [CREDITS.md](CREDITS.md) lists the work this is built on, above all dream-recomp by phobos665.
-Jet Set Recomp is GPL-2.0 ([LICENSE](LICENSE)), as dream-recomp is.
+
+## Licence
+
+Copyright (C) 2026 the Jet Set Recomp contributors.
+
+Jet Set Recomp is free software: you can redistribute it and modify it under the terms of the GNU
+General Public License, version 2 only (`GPL-2.0-only`), as published by the Free Software
+Foundation, the licence dream-recomp is under too. It comes with no warranty, not even the implied
+warranty of merchantability or fitness for a particular purpose. [LICENSE](LICENSE) has the
+licence's full text, and every file of code or configuration names it on an
+`SPDX-License-Identifier` line.
+
+The licence covers this repository. It gives no rights to Jet Set Radio, which SEGA owns: bring your
+own disc. A program built from your disc holds the game's own code, translated, so it's yours to
+play and never to share.

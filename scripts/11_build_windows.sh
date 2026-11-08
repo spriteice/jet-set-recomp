@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Cross-build jgr_boot.exe for Windows from Linux, in build-win/: clang for MinGW-w64, always with
 # -mfma, which the toolchain file sets (MinGW's own fmaf isn't fused). Runs in a cloud sandbox.
 # Needs games/jgr/boot/1ST_READ.BIN and scripts/09_setup_sandbox.sh's Windows prefix.

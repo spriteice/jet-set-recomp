@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 # Jet Grind Radio, MK-51058. Addresses only: nothing from the disc is ever committed.
 #
 # scripts/02_make_gdi.py writes disc.gdi and scripts/03_get_boot_file.py writes boot/1ST_READ.BIN,

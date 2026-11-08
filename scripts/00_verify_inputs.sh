@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Check the disc against data/inputs.sha256. Every run starts here (docs/project-instructions.md,
 # section 3). A disc that doesn't match is a different release: stop, and tell the maintainer.
 #

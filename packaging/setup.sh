@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
 # Set this folder up for your own disc, once: ./setup.sh "DISC_FOLDER/Jet Grind Radio (USA).cue"
 # Writes disc.gdi and boot/1ST_READ.BIN here. Needs Python 3.
 [ -n "$1" ] || { echo 'usage: ./setup.sh "DISC_FOLDER/Jet Grind Radio (USA).cue"' >&2; exit 2; }

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 cmake_minimum_required(VERSION 3.24)
 project(jet_set_recomp LANGUAGES C CXX)
 

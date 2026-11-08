@@ -1,4 +1,5 @@
 @echo off
+rem SPDX-License-Identifier: GPL-2.0-only
 rem Set this folder up for your own disc, once: setup.bat "DISC_FOLDER\Jet Grind Radio (USA).cue"
 rem Writes disc.gdi and boot\1ST_READ.BIN here. Needs Python 3 from python.org.
 if "%~1"=="" (

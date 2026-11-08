@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Build jgr_boot for Linux, in build/. Needs games/jgr/boot/1ST_READ.BIN and games/jgr/disc.gdi, and
 # takes about 15 minutes: translating re-emits 81 MB of C++ in one unit.
 set -euo pipefail

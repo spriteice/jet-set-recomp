@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Fetch dream-recomp into third_party/dream-recomp at the commit in data/dream-recomp.pin. It's
 # fetched, never vendored: third_party/ is ignored, and nothing in it is committed here.
 set -euo pipefail

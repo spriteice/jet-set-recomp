@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
 """Write a .gdi that points at the disc's own .cue and .bin files, copying no track.
 
     python3 scripts/02_make_gdi.py "DISC_FOLDER/Jet Grind Radio (USA).cue" games/jgr/disc.gdi

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 """Tests for the repository's own scripts. They use made-up data and need no disc.
 
     python3 -m unittest discover -s tests
@@ -766,6 +767,38 @@ class SetupErrors(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertIn("dcdisc", result.stderr)
         self.assertNotIn("Traceback", result.stderr)
+
+
+# The project's licence (README.md, "Licence"), named at the top of every file that holds code or
+# configuration, so it goes with a file copied out of the repository.
+LICENCE_ID = "GPL-2.0-only"
+SPDX_LINE = f"SPDX-License-Identifier: {LICENCE_ID}"
+SPDX_SUFFIXES = {".sh", ".py", ".bat", ".cmake", ".toml", ".yml", ".yaml"}
+SPDX_NAMES = {"CMakeLists.txt", ".gitignore", ".gitattributes"}
+SPDX_HEAD_LINES = 3  # after a shebang or a batch file's `@echo off`
+# The FSF's text of the GPL, version 2, as gnu.org/licenses/old-licenses/gpl-2.0.txt has it. The
+# licence lets it be copied only verbatim, and reflowed it once lost its last paragraph.
+GPL2_SHA256 = "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643"
+
+
+class Licence(unittest.TestCase):
+    def test_the_licence_is_the_fsf_text(self):
+        self.assertEqual(hashlib.sha256((ROOT / "LICENSE").read_bytes()).hexdigest(), GPL2_SHA256)
+
+    def test_every_code_and_config_file_names_the_licence(self):
+        checked = 0
+        # What git tracks, or every file in a copy without git, read from the working tree.
+        for entry in audit.tracked_files(ROOT):
+            path = entry.path
+            if path.suffix.lower() not in SPDX_SUFFIXES and path.name not in SPDX_NAMES:
+                continue
+            if not path.is_file():  # deleted, and not yet staged
+                continue
+            head = path.read_text(encoding="utf-8").splitlines()[:SPDX_HEAD_LINES]
+            with self.subTest(path.relative_to(ROOT).as_posix()):
+                self.assertTrue(any(line.rstrip().endswith(SPDX_LINE) for line in head), head)
+            checked += 1
+        self.assertTrue(checked, "found no code or config file to check")
 
 
 if __name__ == "__main__":

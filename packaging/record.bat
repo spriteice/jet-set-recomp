@@ -1,4 +1,5 @@
 @echo off
+rem SPDX-License-Identifier: GPL-2.0-only
 cd /d "%~dp0"
 rem Records a play-through for the regression gate: a copy of your save as the memory card (so the
 rem replay can start from the same save, and your save isn't written), a fixed console clock, and the

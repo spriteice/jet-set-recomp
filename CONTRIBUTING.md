@@ -10,7 +10,9 @@ Three rules first:
    hook, then re-emit. Translator and runtime fixes go on
    [spriteice/dream-recomp](https://github.com/spriteice/dream-recomp), each with a unit test that
    fails without the fix.
-3. **Everything here is GPL-2.0,** and docs stay respectful of dream-recomp and credit phobos665.
+3. **Everything here is GPL-2.0-only.** Every file of code or configuration starts with an
+   `SPDX-License-Identifier: GPL-2.0-only` line (after a shebang or `@echo off`), which the scripts'
+   tests check. Docs stay respectful of dream-recomp and credit phobos665.
 
 [docs/project-rules.md](docs/project-rules.md) has how a change is placed, written and checked.
 [docs/build-and-test-reference.md](docs/build-and-test-reference.md) has building and testing.

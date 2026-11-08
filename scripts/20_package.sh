@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Make a delivery folder from a finished build, without the disc or the boot file.
 #
 #   scripts/20_package.sh linux|windows OUT_FOLDER

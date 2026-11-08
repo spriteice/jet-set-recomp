@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
 # Copy your disc into this folder, once, so the folder is complete and can move or be added to Steam:
 #   ./copy-disc.sh "USB_STICK/Jet Grind Radio (USA)/Jet Grind Radio (USA).cue"
 # Copies the .cue and its tracks (1.2 GB) into disc/, checks them against the hash list, then writes

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Set a clone up to commit as the project: Claude's identity, full history, the latest origin/main
 # (a sandbox's clone can be older than the remote), and, in a clone
 # of this repo, the audit as commit hooks. Commits are signed by the cloud sandbox's own key, which

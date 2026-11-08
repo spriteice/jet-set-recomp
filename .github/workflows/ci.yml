@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-2.0-only
 # CI: the audit and the scripts' tests, on every push, with none of the game's files. The translator
 # and the game need the disc, so they aren't built here: those checks are in
 # docs/build-and-test-reference.md ("Before a commit"). There's no pull_request trigger: the project

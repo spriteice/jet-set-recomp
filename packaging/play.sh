@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-only
 cd "$(dirname "$0")" || exit 1
 mkdir -p logs
 

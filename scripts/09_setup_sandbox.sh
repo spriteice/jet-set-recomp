@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
 # Install what the builds and checks need, in a cloud sandbox only. Never run this on the maintainer's PC
 # (docs/project-instructions.md, section 4 lists what may be installed).
 #
