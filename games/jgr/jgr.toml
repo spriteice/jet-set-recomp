@@ -1,0 +1,67 @@
+# Jet Grind Radio, MK-51058. Addresses only: nothing from the disc is ever committed.
+#
+# scripts/02_make_gdi.py writes disc.gdi and scripts/03_get_boot_file.py writes boot/1ST_READ.BIN,
+# both beside this file, from your own disc. git ignores both.
+
+[game]
+id = "jgr"
+title = "Jet Grind Radio"
+region = "USA"
+product = "MK-51058"
+
+[disc]
+image = "disc.gdi"
+
+[binary]
+path = "boot/1ST_READ.BIN"
+load_address = 0x8C010000    # where the console's BIOS loads the file
+link_address = 0x0C010000    # the same RAM through a different address; what the code assumes
+entry = 0x8C010000           # the first instruction
+
+# Addresses discovery does not reach, and regions the program copies and runs elsewhere, both go
+# here. Run the launcher with --suggest-config FILE and it writes them for you.
+[functions]
+extra = [
+    # A hole: a whole function (prologue right after a literal pool) reached only through the
+    # function table read at 0x0C030546 and called at 0x0C03054C. A 180 s translated run
+    # interpreted it 3 times, 2026-11-04. Not seeded, because they are mid-function addresses the
+    # runtime resolves itself: 0x0C02F796 and 0x0C02F7BA (inside 0x0C02F696..0x0C02F7E4, reached
+    # from the interpreted 0x0C02F5A4) and 0x0C01BD94 (a call-return address shared by ten
+    # overlapping function ranges).
+    0x0C02F5A4,
+    # Two more holes of the same kind, reached through the same dispatcher at 0x0C03054C from the
+    # pointer table at 0x0C175B90 (0x0C039AF0) and 0x0C175B94 (0x0C031AA8). A 600 s translated run
+    # with no input interpreted them 6 and 2 times, along with mid-function addresses inside the
+    # sweep functions that follow them (0x0C031C96; 0x0C039CCE, 0x0C039CEE, 0x0C039CF4,
+    # 0x0C039CFA), which are not seeded, 2026-11-04.
+    0x0C031AA8,
+    0x0C039AF0,
+]
+
+# Measured 2026-11-04 (sandbox, dream-recomp 51ca276): the first translated run stopped at frame 82
+# with untranslated calls into the vector area; these are what --suggest-config wrote for it.
+[[relocations]]   # VBR+0x000, the handler the interrupt path chains to
+source = 0x0C28D240
+size = 0x34
+dest = 0x8C000000
+entry = 0x8C000000
+[[relocations]]   # RAM 0x8C00007C, copied from the image at start-up
+source = 0x0C2A9064
+size = 0x34
+dest = 0x8C00007C
+entry = 0x8C00007C
+[[relocations]]   # VBR+0x100, general exceptions
+source = 0x0C28D1AC
+size = 0x3C
+dest = 0x8C000100
+entry = 0x8C000100
+[[relocations]]   # VBR+0x400, TLB miss, the same code as VBR+0x100
+source = 0x0C28D1AC
+size = 0x3C
+dest = 0x8C000400
+entry = 0x8C000400
+[[relocations]]   # VBR+0x600, interrupts
+source = 0x0C28D1E4
+size = 0x60
+dest = 0x8C000600
+entry = 0x8C000600

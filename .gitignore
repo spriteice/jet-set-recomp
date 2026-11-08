@@ -1,0 +1,54 @@
+# docs/project-instructions.md, section 3: none of this is ever committed.
+# The disc, and anything taken from it
+*.cue
+*.bin
+*.BIN
+*.raw
+*.gdi
+*.chd
+*.cdi
+*.iso
+games/*/boot/
+games/*/suggested.toml
+
+# Fetched, never vendored
+third_party/
+
+# Generated code and builds
+build/
+build-*/
+*.exe
+*.dll
+*.so
+*.so.*
+jgr_boot
+
+# Memory cards and flash
+*.vmu
+*.vms
+*.vmi
+vmu-*
+
+# Pictures, captures, and logs of runs
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.ppm
+*.wav
+*.ta
+*.vram
+*.regs
+capture-*
+last-run.txt
+logs/
+runs/
+.regress/
+*.log
+
+# Python and editors
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
