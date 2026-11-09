@@ -78,7 +78,8 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   unfocused. `known-bugs.md` in the shared folder lists them. On the Ally X, the maintainer reports the
   Garage roof's wrong texture (8) gone, most likely with bug 41's fix (pin `71d5a66`), and the
   flickering character textures (5) and the road (7) still there (8 November). Windows hasn't had a
-  build with that pin yet.
+  build with that pin yet. Phase 2's per-bug check put 7 in the renderer, with its cause, and didn't
+  see 5 or 9 in the sandbox (phase 2, below).
 - **SteamOS runs it (6 November).** The Ally X first ran package
   `2026-11-06-179cdfd-pin-b222a6a-linux` (the first with `copy-disc.sh`, sent with the maintainer's save
   and no game files, as Delivery says) in Desktop Mode: 81 s of guest time in 89.6 s (0.9x), 4,892
@@ -209,9 +210,10 @@ alongside. The reasons, from how other recompilation projects ordered their work
      explained; bugs 5, 7, 8 and 9 each say "translation" or "renderer" in `known-bugs.md`.
    - Measured on 8 November, at pin `71d5a66` in the sandbox: `--interpret` runs at 0.2x, 95 minutes
      for recording 1's 1,325 s and 44 for recording 2's 601 s (three runs at once on four cores).
-     Recording 1's interpreted run leaves the translated replay's path after the save, most likely
-     because the interpreter takes interrupts at other instruction boundaries, as bug 40's notes found
-     the 5 November recording's two runs doing from frame 24.
+     Recording 1's interpreted run leaves the translated replay's path in mission 1, after the save,
+     between frames 50,100 and 50,400 (the per-bug check, below), most likely because the interpreter
+     takes interrupts at other instruction boundaries, as bug 40's notes found the 5 November
+     recording's two runs doing from frame 24.
    - Started 8 November with the per-bug check (the maintainer's card "Per-bug check first", 10:42pm
      UTC+8): no new code, recording 1 run translated and interpreted to the spots of bugs 5, 7 and 9,
      on one build and one renderer, in the sandbox with the disc. The two runs part on interrupt
@@ -220,6 +222,22 @@ alongside. The reasons, from how other recompilation projects ordered their work
      on the Ally X (above), so it isn't placed this way. Upstream's save states, or the dev interpreter
      taking interrupts where translated code does, come on their own cards only if a bug can't be
      placed. The plan is the shared folder's `phase2/per-bug-check/PLAN.md`.
+   - The per-bug check's result (8 November, the shared folder's `phase2/per-bug-check/FINDINGS.md`):
+     run in the sandbox with the disc, on lavapipe, with a binary that adds only a screenshot switch
+     to pin `71d5a66` and changes no count or write hash. Windowed, recording 1 draws pixel-identical
+     frames translated and interpreted in all 1,708 screenshots up to frame 50,100, and differs in all
+     410 from 50,400. The write hashes differ from frame 1, and the interpreted run has delivered 315
+     fewer interrupts by frame 28,471, where both runs' display lists are still byte-identical: that
+     difference is still to be shown at its write. Every run: 0 traps, 0 unmapped, 0 untranslated,
+     the same memory-card counts, and the translated runs' write hashes equal the baseline replay's.
+     - Bug 7 is the renderer's. Every polygon that uses a texture gets one sampler. Its clamp and
+       flip come from the frame's last polygon on that texture, and the texture cache keeps that
+       sampler across frames. On the console, clamp and flip are each polygon's own. At the bus
+       terminal that clamps the near brick walkway into bars. Both runs show them there, and
+       changing only that last polygon's TSP in a capture moves them. The fix is phase 4's.
+     - Bugs 5 and 9 don't show in the sandbox, and so aren't placed. In 1,173 renders per run with
+       characters close, no texture goes black. In every grind the sparks come from the skates. The
+       two runs are identical in both.
 3. **Runtime and platforms.**
    - Entry: phase 1's exit. The first SteamOS smoke test runs now, on the pin-move build, which goes
      to both devices: a Windows build on the PC, and a Linux package with `copy-disc.sh` for the Ally X
