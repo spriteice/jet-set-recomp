@@ -32,7 +32,8 @@
         "Linux sandbox, build on pin d990818, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 3023c32, 2.2x real time, 7 Nov 2026: 228,472 interrupts (was 228,345) and 21,981,140 non-zero sound samples (was 21,975,158), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged",
         "Linux sandbox, build on pin f8671ad, 1.7x real time, 7 Nov 2026",
-        "Linux sandbox, build on pin 71d5a66, 1.7x real time, 8 Nov 2026"
+        "Linux sandbox, build on pin 71d5a66, 1.7x real time, 8 Nov 2026",
+        "Linux sandbox, build on pin 6154c9a, 1.8x real time, 9 Nov 2026"
       ]
     },
     "presses": {
@@ -58,7 +59,8 @@
         "Linux sandbox, build on pin d990818, 2.1x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 3023c32, 2.4x real time, 7 Nov 2026: 237,919 interrupts (was 237,943) and 25,018,724 non-zero sound samples (was 25,017,321), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged",
         "Linux sandbox, build on pin f8671ad, 1.9x real time, 7 Nov 2026",
-        "Linux sandbox, build on pin 71d5a66, 2.0x real time, 8 Nov 2026"
+        "Linux sandbox, build on pin 71d5a66, 2.0x real time, 8 Nov 2026",
+        "Linux sandbox, build on pin 6154c9a, 2.0x real time, 9 Nov 2026"
       ]
     },
     "no_input_vmu": {
@@ -85,7 +87,8 @@
         "Linux sandbox, build on pin d990818, 1.9x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 3023c32, 2.2x real time, 7 Nov 2026: 229,640 interrupts (was 229,696) and 22,273,962 non-zero sound samples (was 22,269,385), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged",
         "Linux sandbox, build on pin f8671ad, 1.7x real time, 7 Nov 2026",
-        "Linux sandbox, build on pin 71d5a66, 1.7x real time, 8 Nov 2026"
+        "Linux sandbox, build on pin 71d5a66, 1.7x real time, 8 Nov 2026",
+        "Linux sandbox, build on pin 6154c9a, 1.8x real time, 9 Nov 2026"
       ]
     },
     "presses_vmu": {
@@ -112,7 +115,8 @@
         "Linux sandbox, build on pin d990818, 1.8x real time, 6 Nov 2026",
         "Linux sandbox, build on pin 3023c32, 2.1x real time, 7 Nov 2026: 230,397 interrupts (was 230,355) and 25,243,427 non-zero sound samples (was 25,242,025), because the game rounds to nearest from boot since 3023c32 (known bug 36); every other count unchanged",
         "Linux sandbox, build on pin f8671ad, 1.8x real time, 7 Nov 2026",
-        "Linux sandbox, build on pin 71d5a66, 1.8x real time, 8 Nov 2026"
+        "Linux sandbox, build on pin 71d5a66, 1.8x real time, 8 Nov 2026",
+        "Linux sandbox, build on pin 6154c9a, 1.8x real time, 9 Nov 2026"
       ]
     },
     "tutorial_mission1_kogane_replay": {
@@ -137,5 +141,5 @@
       ]
     }
   },
-  "built_from": "dream-recomp 71d5a6639dd2, this repo's pin, built with scripts/10_build_linux.sh on 8 Nov 2026: on top of f8671ad, the windowed launcher drops the cached textures the game writes over in video memory (71d5a66, known bug 41). Headless runs never drop a texture: the four 10-minute runs keep every count, each with the same write hash as at 3023c32, and the gate's three scenarios are identical to f8671ad's, write hash and counters. Before it, f8671ad on top of 3023c32: a return into the middle of a function resumes in the function that has a label there, through any address alias (0204111, known bug 39), and the dev interpreter's log of every address it executes (f8671ad, --exec-coverage, measurement only). Neither changes a count of the four 10-minute runs or of the gate's attract and gameplay scenarios. Before it, 3023c32 on top of d990818: the host's floating-point mode for the runtime's own hooks and the run's end (56a4277, known bug 37; no guest arithmetic changes, the gate identical) and the boot's floating-point mode (3023c32, known bug 36: FPSCR 0x00040000, round to nearest, as the disc's bootstrap hands over, where it was 0x00040001). Bug 36's fix changes the game's arithmetic: the four 10-minute runs keep every count but interrupts and non-zero sound samples, and the maintainer's recording of 5 November no longer replays (known bug 40), so runs.tutorial_mission1_kogane_replay, recorded on 8 November on a build with the fix, replaces it. The translator is 0204111's, which changes only what a function's resume switch matches: discovery gives 12,184 functions, 756,050 instructions, 216 switch tables and 1,263,576 of 1,495,698 bytes, as at every pin since b222a6a. The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
+  "built_from": "dream-recomp 6154c9aa3a86, this repo's pin, built with scripts/10_build_linux.sh on 9 Nov 2026: on top of 71d5a66, the presenter draws the picture only inside its own rectangle in a window of any shape (6154c9a, known bug 43). Headless runs never present: the four 10-minute runs keep every count, each with the same write hash as at 71d5a66, and the gate's three scenarios, recording 1's included, are identical to 71d5a66's, write hash and counters. Before it, 71d5a66 on top of f8671ad: the windowed launcher drops the cached textures the game writes over in video memory (71d5a66, known bug 41). Headless runs never drop a texture: the four 10-minute runs keep every count, each with the same write hash as at 3023c32, and the gate's three scenarios are identical to f8671ad's, write hash and counters. Before it, f8671ad on top of 3023c32: a return into the middle of a function resumes in the function that has a label there, through any address alias (0204111, known bug 39), and the dev interpreter's log of every address it executes (f8671ad, --exec-coverage, measurement only). Neither changes a count of the four 10-minute runs or of the gate's attract and gameplay scenarios. Before it, 3023c32 on top of d990818: the host's floating-point mode for the runtime's own hooks and the run's end (56a4277, known bug 37; no guest arithmetic changes, the gate identical) and the boot's floating-point mode (3023c32, known bug 36: FPSCR 0x00040000, round to nearest, as the disc's bootstrap hands over, where it was 0x00040001). Bug 36's fix changes the game's arithmetic: the four 10-minute runs keep every count but interrupts and non-zero sound samples, and the maintainer's recording of 5 November no longer replays (known bug 40), so runs.tutorial_mission1_kogane_replay, recorded on 8 November on a build with the fix, replaces it. The translator is 0204111's, which changes only what a function's resume switch matches: discovery gives 12,184 functions, 756,050 instructions, 216 switch tables and 1,263,576 of 1,495,698 bytes, as at every pin since b222a6a. The pin 6c098df gave 12,259 / 712,697 / 120 / 1,216,786 / 1,447,388."
 }

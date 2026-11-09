@@ -1,13 +1,13 @@
 # Status
 
-The project's durable notes: where the work stands and what's next. Keep this current. Updated 8
+The project's durable notes: where the work stands and what's next. Keep this current. Updated 9
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
 ## Where it stands
 
 - **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
-  `data/dream-recomp.pin` is `71d5a66` (8 November): the four up to `6c098df`, then `697bfc8` (each
+  `data/dream-recomp.pin` is `6154c9a` (9 November): the four up to `6c098df`, then `697bfc8` (each
   block's exit written once, `known-bugs.md` 13), `cdd66be` (dcdisc across drives, 14), the seven
   of 6 November, approved on cards: bug 11's three translator fixes (`6c6cc9f`, `8e409b0`, `ab1faa7`),
   constant propagation past a reload (`ef7c0a6`, bug 17), discovery's blocks cut into basic blocks
@@ -28,8 +28,11 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   interpreter's log of every address it executes (`f8671ad`, `--exec-coverage`, a measurement tool,
   phase 1's check that no unknown byte executes), and one of 8 November: the windowed launcher drops
   the cached textures the game has written over in video memory before each render (`71d5a66`, bug
-  41: the garage's graffiti preview kept the previous design). The translator is `0204111`'s, which
-  changes only what the resume switch matches. Bug 36's fix changes the game's arithmetic, and the
+  41: the garage's graffiti preview kept the previous design), and one of 9 November: the presenter
+  draws the picture only inside its own rectangle (`6154c9a`, bug 43: in a maximised or fullscreen
+  window the picture's last column was smeared out to the window's edge and cut off by a black
+  corner). The translator is `0204111`'s, which changes only what the resume switch matches. Bug
+  36's fix changes the game's arithmetic, and the
   maintainer approved the new counts with this pin: the four 10-minute runs keep every count but
   interrupts and non-zero sound samples (35,977 frames, 0 traps, 0 unmapped, 0 untranslated each, the
   two memory-card runs at 0 untranslated since `b222a6a`, bug 11's cause B), and the gate's attract and
@@ -43,8 +46,10 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   counters; the stale replay's untranslated call targets go from 1 to 0 (bug 39). Pin `71d5a66`
   changes nothing headless, where the launcher never drops a texture: the four 10-minute runs keep
   every count, each with the same write hash as at `3023c32`, and the gate's three scenarios are
-  identical to `f8671ad`'s, write hash and counters.
-  Nothing is ahead of the pin on dream-recomp `main` (8 November, 07:58 UTC).
+  identical to `f8671ad`'s, write hash and counters. Pin `6154c9a` changes nothing headless either,
+  where nothing is presented: the four 10-minute runs keep every count, each with the same write hash as
+  at `71d5a66`, and the gate's three scenarios are identical to `71d5a66`'s, write hash and counters.
+  Nothing is ahead of the pin on dream-recomp `main` (9 November, 02:50 UTC).
 - **The disc is in a sandbox, and recording 1 is the baseline's and the gate's play-through.** The
   maintainer's recording 1 of 8 November (`data/recordings/2026-11-08-tutorial-mission1-kogane.txt`,
   inputs only; the original, the device's report and the sandbox's replay in the shared folder's
@@ -77,9 +82,12 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   texture on the Shibuya Terminal road, sparks that don't follow the skates, and pacing while
   unfocused. `known-bugs.md` in the shared folder lists them. On the Ally X, the maintainer reports the
   Garage roof's wrong texture (8) gone, most likely with bug 41's fix (pin `71d5a66`), and the
-  flickering character textures (5) and the road (7) still there (8 November). Windows hasn't had a
-  build with that pin yet. Phase 2's per-bug check put 7 in the renderer, with its cause, and didn't
-  see 5 or 9 in the sandbox (phase 2, below).
+  flickering character textures (5) and the road (7) still there (8 November). Phase 2's per-bug
+  check put 7 in the renderer, with its cause, and didn't see 5 or 9 in the sandbox (phase 2, below).
+  A maximised or fullscreen window drew the picture's edge out to the window's edge (43): fixed at pin
+  `6154c9a`, and the maintainer saw it fixed on the Ally X and on Windows (9 November), with the test
+  builds `2026-11-08-8661d09-pin-6154c9a-test-fullscreen-linux` and `-windows`, the first Windows
+  build with bug 41's fix in it, where only the window was checked.
 - **SteamOS runs it (6 November).** The Ally X first ran package
   `2026-11-06-179cdfd-pin-b222a6a-linux` (the first with `copy-disc.sh`, sent with the maintainer's save
   and no game files, as Delivery says) in Desktop Mode: 81 s of guest time in 89.6 s (0.9x), 4,892
