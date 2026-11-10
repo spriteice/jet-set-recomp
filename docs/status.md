@@ -1,6 +1,6 @@
 # Status
 
-The project's durable notes: where the work stands and what's next. Keep this current. Updated 9
+The project's durable notes: where the work stands and what's next. Keep this current. Updated 10
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
@@ -83,7 +83,8 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   unfocused. `known-bugs.md` in the shared folder lists them. On the Ally X, the maintainer reports the
   Garage roof's wrong texture (8) gone, most likely with bug 41's fix (pin `71d5a66`), and the
   flickering character textures (5) and the road (7) still there (8 November). Phase 2's per-bug
-  check put 7 in the renderer, with its cause, and didn't see 5 or 9 in the sandbox (phase 2, below).
+  check put 7 in the renderer with its cause, and 5 there too with its cause on 10 November; 9 isn't
+  placed yet (phase 2, below).
   A maximised or fullscreen window drew the picture's edge out to the window's edge (43): fixed at pin
   `6154c9a`, and the maintainer saw it fixed on the Ally X and on Windows (9 November), with the test
   builds `2026-11-08-8661d09-pin-6154c9a-test-fullscreen-linux` and `-windows`, the first Windows
@@ -243,9 +244,24 @@ alongside. The reasons, from how other recompilation projects ordered their work
        sampler across frames. On the console, clamp and flip are each polygon's own. At the bus
        terminal that clamps the near brick walkway into bars. Both runs show them there, and
        changing only that last polygon's TSP in a capture moves them. The fix is phase 4's.
-     - Bugs 5 and 9 don't show in the sandbox, and so aren't placed. In 1,173 renders per run with
-       characters close, no texture goes black. In every grind the sparks come from the skates. The
-       two runs are identical in both.
+     - Bug 5 is the renderer's (10 November). The 8 November check said the sandbox doesn't show it.
+       That was wrong: it does, in both runs alike, and the check's detector missed it because it
+       counted only pixels darker than the game's outline colour (34,0,2). The game draws its cel
+       outline as a hull of translucent polygons around each character, and the hardware sorts
+       translucent pixels by depth (auto-sort mode). The renderer sorts whole polygons by their
+       nearest vertex instead (`Renderer::draw`), so wherever a hull polygon sorts after the model it
+       covers it: the legs, skates and hands take the outline colour, and the order changes as the
+       model moves. In a capture of Beat mid-grind the hull covers him at 1,622 of the 6,073 pixels
+       where he's nearer, and moving only the hull earlier brings those parts back. Depth is ruled
+       out. The maintainer's Ally X replay of recording 1 wrote the sandbox's hash on every frame to
+       50,100 and showed the flashes throughout, as the Windows PC does. The check was the
+       maintainer's card "Look now, no code" (6:06pm UTC+8); its results are the shared folder's
+       `phase2/per-bug-check/results/03-bug5-cause.txt`. The fix is phase 4's: per-pixel sorting of
+       the translucent list. The same check's validation run found a sync hazard on the window's
+       depth image that changes nothing on screen (`known-bugs.md`, 45).
+     - Bug 9 doesn't show in the sandbox: in every grind the sparks come from the skates, in both
+       runs alike. The Ally X replay ran the same grinds; what the maintainer saw there is still to
+       hear.
 3. **Runtime and platforms.**
    - Entry: phase 1's exit. The first SteamOS smoke test runs now, on the pin-move build, which goes
      to both devices: a Windows build on the PC, and a Linux package with `copy-disc.sh` for the Ally X
