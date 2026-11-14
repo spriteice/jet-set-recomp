@@ -82,11 +82,15 @@ history, or it only counts the hashes that are dream-recomp's; and in a project 
 audit checks names only with a denylist: in a sandbox, write the maintainer's name to
 `.git/info/audit-denylist` (never a tracked file); CI reads it from the `AUDIT_DENYLIST` secret.
 `.github/workflows/ci.yml` runs the same on GitHub, which has no disc. In a clone of this repo,
-`scripts/08_git_setup.sh` also installs two hooks: `pre-commit` runs the file audit on the staged files,
+`scripts/08_git_setup.sh` also installs three hooks: `pre-commit` runs the file audit on the staged files,
 and `commit-msg` checks the message for a session link or a denied word
 (`audit_repo.py . --message FILE`), so a leak is stopped before a push publishes it; CI would catch it
-only after. The hooks can't check the author, committer or signature, which exist only once the commit
-is made, so the `--commits HEAD` audit still runs. A hook that isn't ours is left alone and named. A
+only after. The commit hooks can't check the author, committer or signature, which exist only once the
+commit is made, so the `--commits HEAD` audit still runs. `pre-push` (`scripts/check_push.py`) refuses a
+push of anything but `main`, one that isn't a fast-forward, one made while
+`release-prep/RELEASE-IN-PROGRESS.md` is in the shared folder (it says so when it can't see the folder,
+and goes on), and one whose commits don't pass the audit, each commit's files included. A hook stops a
+slip, not a decision: `--no-verify` passes it over. A hook that isn't ours is left alone and named. A
 thread that changes only docs or scripts needs shellcheck alone (`apt-get install shellcheck`, which section 4 allows), not the
 toolchain and SDL3 builds of `scripts/09_setup_sandbox.sh`.
 

@@ -859,7 +859,7 @@ class GitSetup(unittest.TestCase):
         result = self.setup()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("runs at commit time", result.stdout)
-        for hook in ("pre-commit", "commit-msg"):
+        for hook in ("pre-commit", "commit-msg", "pre-push"):
             self.assertTrue(os.access(self.repo / ".git/hooks" / hook, os.X_OK), hook)
         git = ["git", "-C", str(self.repo)]
         (self.repo / "notes.md").write_text("fn_0c014070, 35,977 frames\n")
@@ -887,6 +887,7 @@ class GitSetup(unittest.TestCase):
         self.assertIn("isn't ours", result.stderr)
         self.assertEqual(hook.read_text(), "#!/bin/sh\nexit 0\n")
         self.assertTrue((self.repo / ".git/hooks/commit-msg").exists())
+        self.assertTrue((self.repo / ".git/hooks/pre-push").exists())
 
     def test_it_installs_no_hooks_where_the_audit_isnt(self):
         """A dream-recomp clone has its own checks and no audit_repo.py, so it gets no hooks."""
@@ -894,6 +895,193 @@ class GitSetup(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse((self.repo / ".git/hooks/pre-commit").exists())
         self.assertNotIn("runs at commit time", result.stdout)
+
+
+class PushCheck(unittest.TestCase):
+    """The pre-push hook, as scripts/08_git_setup.sh installs it, on real pushes to a bare remote that
+    stands in for GitHub."""
+    SIGNATURE = b"\ngpgsig -----BEGIN SSH SIGNATURE-----\n U1NIU0lH\n -----END SSH SIGNATURE-----"
+
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        self.remote = self.folder / "remote.git"
+        self.repo = self.folder / "repo"
+        self.shared = self.folder / "shared"
+        (self.shared / "release-prep").mkdir(parents=True)
+        (self.folder / "gitconfig").write_text("")
+        name, email = audit.IDENTITY.rstrip(">").split(" <")
+        # Nothing of this machine's git setup, its denylist or its shared folder reaches the test.
+        self.env = dict(os.environ, HOME=str(self.folder), GIT_CONFIG_GLOBAL=str(self.folder / "gitconfig"),
+                        GIT_AUTHOR_NAME=name, GIT_AUTHOR_EMAIL=email, GIT_COMMITTER_NAME=name,
+                        GIT_COMMITTER_EMAIL=email, JGR_SHARED_FOLDER=str(self.shared), JGR_AUDIT_DENYLIST="")
+        self.env.pop("JGR_RELEASE_PUSH", None)
+        subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", "--bare", str(self.remote)], check=True)
+        subprocess.run(["git", "-c", "init.defaultBranch=main", "init", "-q", str(self.repo)], check=True)
+        self.git("remote", "add", "origin", str(self.remote))
+        shutil.copytree(ROOT / "scripts", self.repo / "scripts", ignore=shutil.ignore_patterns("__pycache__"))
+        setup = subprocess.run(["bash", str(ROOT / "scripts/08_git_setup.sh"), str(self.repo)],
+                               capture_output=True, text=True, env=self.env)
+        self.assertEqual(setup.returncode, 0, setup.stderr)
+        self.assertIn("the push check at push time", setup.stdout)
+        self.assertTrue(os.access(self.repo / ".git/hooks/pre-push", os.X_OK))
+        self.git("add", "scripts")
+        self.first = self.commit("Add the scripts")
+
+    def git(self, *args: str, **env: str) -> subprocess.CompletedProcess:
+        return subprocess.run(["git", "-C", str(self.repo), *args], capture_output=True, text=True,
+                              env=dict(self.env, **env))
+
+    def commit(self, message: str, signed: bool = True, *args: str, **env: str) -> str:
+        """A commit on the current branch, and its hash. It's made unsigned, and a signed one then gets
+        a stand-in signature header, as in AuditCommits: the audit checks that one is there."""
+        made = self.git("commit", "-q", "--no-gpg-sign", "--allow-empty", "-m", message, *args, **env)
+        self.assertEqual(made.returncode, 0, made.stdout + made.stderr)
+        if signed:
+            raw = subprocess.run(["git", "-C", str(self.repo), "cat-file", "commit", "HEAD"],
+                                 capture_output=True, check=True).stdout
+            headers, body = raw.split(b"\n\n", 1)
+            commit = subprocess.run(["git", "-C", str(self.repo), "hash-object", "-t", "commit", "-w", "--stdin"],
+                                    input=headers + self.SIGNATURE + b"\n\n" + body, capture_output=True,
+                                    check=True).stdout.decode().strip()
+            self.assertEqual(self.git("update-ref", "HEAD", commit).returncode, 0)
+        return self.git("rev-parse", "HEAD").stdout.strip()
+
+    def on_remote(self, ref: str = "refs/heads/main") -> str:
+        """The commit the remote has at ref, or '' when it has no such ref."""
+        return subprocess.run(["git", "-C", str(self.remote), "rev-parse", "-q", "--verify", ref],
+                              capture_output=True, text=True).stdout.strip()
+
+    def test_a_signed_fast_forward_of_main_is_pushed(self):
+        result = self.git("push", "origin", "main")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("push check: 1 commit(s)", result.stdout + result.stderr)
+        self.assertEqual(self.on_remote(), self.first)
+        second = self.commit("Add nothing")
+        third = self.commit("Add nothing again")
+        result = self.git("push", "origin", "main")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("push check: 2 commit(s)", result.stdout + result.stderr)
+        self.assertNotEqual(second, third)
+        self.assertEqual(self.on_remote(), third)
+
+    def test_any_ref_but_main_is_refused(self):
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        self.git("tag", "v0.1")
+        for refspec, ref in (("main:claude/a-session-branch", "refs/heads/claude/a-session-branch"),
+                             ("v0.1", "refs/tags/v0.1")):
+            with self.subTest(refspec):
+                result = self.git("push", "origin", refspec)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"push refused: {ref} isn't main. Only main is pushed", result.stderr)
+                self.assertEqual(self.on_remote(ref), "")
+        # One refused ref stops the whole push, main's part of it too.
+        second = self.commit("Add nothing")
+        result = self.git("push", "origin", "main", "main:claude/a-session-branch")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.on_remote(), self.first)
+        self.assertNotEqual(self.on_remote(), second)
+
+    def test_a_push_that_isnt_a_fast_forward_is_refused_even_when_forced(self):
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        self.commit("Say it another way", True, "--amend")  # a different commit in the pushed one's place
+        result = self.git("push", "--force", "origin", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("so this would change pushed history", result.stderr)
+        self.assertEqual(self.on_remote(), self.first)
+        result = self.git("push", "origin", ":main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("push refused: this would delete main on the remote", result.stderr)
+        self.assertEqual(self.on_remote(), self.first)
+
+    def test_a_remote_that_moved_is_refused_with_what_to_do(self):
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        other = self.folder / "other"
+        subprocess.run(["git", "clone", "-q", str(self.remote), str(other)], check=True, env=self.env)
+        subprocess.run(["git", "-C", str(other), "commit", "-q", "--no-gpg-sign", "--allow-empty", "-m", "Theirs"],
+                       check=True, env=self.env)
+        subprocess.run(["git", "-C", str(other), "push", "-q", "origin", "main"], check=True, env=self.env)
+        theirs = self.on_remote()
+        self.commit("Ours")
+        result = self.git("push", "--force", "origin", "main")  # this clone never fetched theirs
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"the remote's main is at {theirs[:7]}, which this clone doesn't have. Fetch origin main first",
+                      result.stderr)
+        self.assertEqual(self.on_remote(), theirs)
+
+    def test_a_push_is_refused_while_a_release_is_under_way(self):
+        marker = self.shared / "release-prep/RELEASE-IN-PROGRESS.md"
+        marker.write_text("v0.1\n")
+        result = self.git("push", "origin", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("push refused: a release is under way", result.stderr)
+        self.assertIn(str(marker), result.stderr)
+        self.assertEqual(self.on_remote(), "")
+        marker.unlink()
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        # A sandbox outside the project can't see the shared folder: said, and not a reason to refuse.
+        self.commit("Add nothing")
+        result = self.git("push", "origin", "main", JGR_SHARED_FOLDER=str(self.folder / "none"))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("so whether a release is under way", result.stdout + result.stderr)
+
+    def test_every_commit_it_would_publish_is_audited(self):
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        unsigned = self.commit("Add nothing", signed=False)
+        result = self.git("push", "origin", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"{unsigned[:7]}: not signed", result.stderr)
+        self.assertIn("push refused: the audit found 1 thing(s) in the 1 commit(s) this would publish", result.stderr)
+        self.git("reset", "-q", "--hard", self.first)
+        other = self.commit("Add nothing", True, GIT_AUTHOR_NAME="Pat Example", GIT_AUTHOR_EMAIL="pat@example.com")
+        result = self.git("push", "origin", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"{other[:7]}: author is not the project identity", result.stderr)
+        self.git("reset", "-q", "--hard", self.first)
+        link = "https://" + "claude" + ".ai/code/session_x"
+        self.commit("Add nothing\n\n" + link, True, "--no-verify")  # past the commit-msg hook
+        result = self.git("push", "origin", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("a Claude session link in the message", result.stderr)
+        self.assertEqual(self.on_remote(), self.first)
+
+    def test_a_file_committed_past_the_hooks_is_found_in_the_history_it_would_publish(self):
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        (self.repo / "vmu-a1.bin").write_bytes(b"\0" * 16)
+        self.git("add", "-f", "vmu-a1.bin")
+        added = self.commit("Add a card", True, "--no-verify")  # the commit hooks didn't run
+        self.git("rm", "-q", "vmu-a1.bin")
+        self.commit("Remove the card")  # the tip is clean again, and the card is still in the history
+        result = self.git("push", "origin", "main")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"{added[:7]}: vmu-a1.bin: a disc, binary, card or capture file type", result.stderr)
+        self.assertIn("in the 2 commit(s) this would publish", result.stderr)
+        self.assertEqual(self.on_remote(), self.first)
+
+    def test_the_releases_own_push_goes_out_while_the_release_is_marked_and_carries_its_tag(self):
+        self.assertEqual(self.git("push", "origin", "main").returncode, 0)
+        marker = self.shared / "release-prep/RELEASE-IN-PROGRESS.md"
+        release = self.commit("Release notes")
+        self.git("tag", "v0.1")
+        # Not without the release being marked first: step 0 of the checklist.
+        result = self.git("push", "origin", "main", "v0.1", JGR_RELEASE_PUSH="1")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("JGR_RELEASE_PUSH is set, and no release is marked", result.stderr)
+        self.assertEqual(self.on_remote("refs/tags/v0.1"), "")
+        marker.write_text("v0.1\n")
+        result = self.git("push", "origin", "main", "v0.1", JGR_RELEASE_PUSH="1")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual((self.on_remote(), self.on_remote("refs/tags/v0.1")), (release, release))
+        # A published tag is never moved or deleted, and a branch that isn't main is still refused.
+        self.commit("Fix the notes")
+        self.git("tag", "-f", "v0.1")
+        for refspec, why in (("v0.1", "the remote already has the tag v0.1"), (":v0.1", "this would delete the tag v0.1"),
+                             ("main:release", "refs/heads/release isn't main")):
+            with self.subTest(refspec):
+                result = self.git("push", "--force", "origin", refspec, JGR_RELEASE_PUSH="1")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(why, result.stderr)
+        self.assertEqual(self.on_remote("refs/tags/v0.1"), release)
 
 
 class FetchDreamRecomp(unittest.TestCase):

@@ -32,7 +32,9 @@ that is.
 8. **Test those builds** on the Ally X (Desktop and Game Mode) and the Windows PC, including a fresh setup
    and an upgrade over the last release's saves. If anything fails: fix, recheck, rebuild.
 9. **Go-ahead:** I approve publishing, with every step passed and no open critical bug.
-10. **Push and publish,** source only. Check that no release asset holds a built program.
+10. **Push and publish,** source only. The push is made with `JGR_RELEASE_PUSH=1`: without it the push
+    hook (`scripts/check_push.py`) refuses a tag, and any push while the release is marked. Check that
+    no release asset holds a built program.
 11. **Check the release:** the tag is on the release commit, and the README's links work.
 12. **Close out:** a source backup (`git clone --mirror`, `git bundle`, checked with `git fsck`), the
     backlog marked shipped, the roadmap moved on, and `RELEASE-IN-PROGRESS.md` removed.
