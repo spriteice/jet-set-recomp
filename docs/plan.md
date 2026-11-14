@@ -89,11 +89,30 @@ Times are UTC unless marked UTC+8.
      rendering about 110 s in, translated only (33). Both discs take their language from the console's
      setting, which the runtime always reports as English, so a language setting is the one runtime
      change every other release needs, and both discs can show it working.
-6. **Speed, OpenGL and release.** Rebuild cost, unless phase 1 took it (it didn't: four full builds):
-   each config change re-emits 81 MB of C++ in one unit and takes about 15 minutes. OpenGL 3.3 core, as
-   its own milestone. The player's build: a release is source only, so the build is what a player
-   gets, and today it runs on Linux alone (Windows is cross-compiled). Phase 6 adds a Windows-hosted
-   build (MSVC or clang-cl, as upstream's own CI builds Windows x64), documented in the README, and a
-   timed build from a clean checkout on both OSes by someone who isn't us, before the release
-   checklist (`docs/release-checklist.md`) runs (the maintainer, 6 Nov 01:28). Any enhancements the
-   maintainer wants come last.
+6. **Rebuilds, enhancements, OpenGL and release.** Its plan is `phase6/PLAN.md` in the shared
+   folder, adopted by the maintainer on 14 November (09:02, card "Adopt, enhancements first"), with the
+   enhancements before OpenGL and the release. In order:
+   - Rebuild cost, unless phase 1 took it (it didn't: four full builds): each config change re-emits
+     81 MB of C++ in one unit and takes about 15 minutes, and every hook after it re-emits.
+   - A study of the game, with no code: the screen's settings and who reads them, how the HUD and the
+     menus are drawn, the game's own culling, and the draw test of each class below. It started
+     beside phase 3 on 14 November (card "New thread, study now", 09:03).
+   - Hooks: the mechanism the maintainer approved on 14 November (09:02), built after phase 3's exit,
+     with the plan's two additions, tuned values and frame notes, if they're approved.
+   - Super-xBR upscaling for world textures, menus and the HUD, and graffiti, in the texture cache that
+     phase 4 rebuilds.
+   - Widescreen: the 3D view first, then the HUD and the menus, each screen kept 4:3 until it has been
+     checked wide.
+   - Draw-distance options for graffiti cans, vehicles, characters, crowds, police and police vehicles,
+     each sized from the study.
+   - OpenGL 3.3 core, as its own milestone.
+   - The player's build and the release. A release is source only, so the build is what a player
+     gets, and today it runs on Linux alone (Windows is cross-compiled). Phase 6 adds a Windows-hosted
+     build (MSVC or clang-cl, as upstream's own CI builds Windows x64), documented in the README, and a
+     timed build from a clean checkout on both OSes by someone who isn't us, before the release
+     checklist (`docs/release-checklist.md`) runs (the maintainer, 6 Nov 01:28).
+
+   Every enhancement is off by default, and with it off the gate and the 10-minute runs are unchanged.
+   A setting that changes what the game does says so in the menu, is written into recordings, and is
+   played by hand on both devices before it can be a default. The release doesn't depend on the
+   enhancements, so it can be called after any of them.
