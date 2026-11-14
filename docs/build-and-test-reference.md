@@ -21,11 +21,11 @@ How builds of Jet Set Recomp are made, checked, delivered and reported. It's wri
 - **My PC,** through folder access for files (reading, copying, writing the claim) and Remote Control
   for running anything, and only for what needs the PC itself, such as running a Windows build or
   copying the disc. Everything is under `E:\Games\Ports\jsr\DC`: the disc in `Game Files\Dreamcast\`, builds in
-  `Building\`. Before anything heavy, read the claim file,
-  `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, add a line saying whether a window opens
-  and for how long, and move it to `PC-HISTORY.md` beside it when done (`docs/status.md`, "Things that
-  bite", has the protocol). Nothing is installed, committed or pushed
-  from there. The `jsrf-build` WSL distribution there belongs to another project: don't use it.
+  `Building\`. Before a Remote Control session, a build or a test run there, claim the PC in
+  `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, and clear the claim when the session
+  ends, as section 4 of the instructions says. The claim's "what you'll run" says whether a game
+  window opens. Nothing is installed, committed or pushed from there. The `jsrf-build` WSL
+  distribution there belongs to another project: don't use it.
 
 A session on the PC uses Git for Windows by full path (`C:\Program Files\Git\cmd\git.exe`), because
 devkitPro's MSYS2 git comes first on PATH. It calls `cmd.exe` by full path too

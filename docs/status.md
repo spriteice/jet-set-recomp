@@ -370,12 +370,7 @@ alongside. The reasons, from how other recompilation projects ordered their work
 - Hashing the whole disc takes about 5 minutes on the PC.
 - `jgr_boot --window` opens a real window, and implies sound unless `--no-audio` is given.
 - The PC is shared with the JSRF-PC project (the maintainer, 5 November): one job runs on it at a
-  time, and the claim lives in that project's folder at
-  `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, not in `E:\Games\Ports\jsr\` (confirmed by
-  the maintainer, 6 Nov 06:49). Before any PC work: read it, and an "In use from ..." line means wait or
-  work elsewhere; if it's free, add one line ("In use from <UTC time> on <date> by <project and
-  thread>, <what and where>, about <how long>"), written with the guard on the file's time
-  (`device_commit_files`' `expectedMtimeMs`, from the copy you read) so a claim made in between isn't
-  overwritten, and if the write is refused, read it again; read it again just before starting; when
-  done, move the line to the top of `PC-HISTORY.md` beside it. Stay out of `Claude\Building\` and the
-  `jsrf-build` Docker setup. A thread that can't reach that folder asks the maintainer first.
+  time. The claim file, `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, is in that
+  project's folder, not in `E:\Games\Ports\jsr\` (confirmed by the maintainer, 6 Nov 06:49), and its
+  last line says "Free from ..." or "In use from ...". How to claim the PC and clear the claim is
+  `docs/project-instructions.md`, section 4, in the maintainer's words of 14 November.

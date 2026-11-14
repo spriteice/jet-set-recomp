@@ -38,6 +38,8 @@ The ones most easily broken:
 - Reports on anything the game runs state numbers: commands, frames, traps, unmapped accesses,
   untranslated call targets (the run report's own lines), and the diff against `data/baseline.json`
   and the regression gate.
-- Before anything heavy on the maintainer's PC, read and update the claim file,
-  `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md` (the protocol is in `docs/status.md`,
-  "Things that bite"). Never touch `E:\Games\Ports\jsr\PC`.
+- Before a Remote Control session, a build or a test run on the maintainer's PC, claim the PC in
+  `E:\Games\Ports\jsrf\Claude\building-on-pc\PC-IN-USE.md`, and say so if it's in use
+  (`docs/project-instructions.md`, section 4, has the steps). Touch nothing else in
+  `E:\Games\Ports\jsrf\Claude`, never close a game that is running, and never touch
+  `E:\Games\Ports\jsr\PC`.
