@@ -22,6 +22,7 @@ To check the repository's own scripts, with no disc:
 
 ```sh
 python3 scripts/audit_repo.py . --commits HEAD
+python3 scripts/check_docs.py .
 python3 -m unittest discover -s tests
 shellcheck scripts/*.sh packaging/*.sh
 ```

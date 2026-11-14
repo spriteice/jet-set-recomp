@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
-# CI: the audit and the scripts' tests, on every push, with none of the game's files. The translator
-# and the game need the disc, so they aren't built here: those checks are in
+# CI: the audit, the docs check and the scripts' tests, on every push, with none of the game's files.
+# The translator and the game need the disc, so they aren't built here: those checks are in
 # docs/build-and-test-reference.md ("Before a commit"). There's no pull_request trigger: the project
 # works on main only, and on a pull request HEAD is GitHub's own merge commit, which the audit rejects.
 name: CI
@@ -24,6 +24,8 @@ jobs:
         env:
           JGR_AUDIT_DENYLIST: ${{ secrets.AUDIT_DENYLIST }}
         run: python3 scripts/audit_repo.py . --commits HEAD
+      - name: Documents
+        run: python3 scripts/check_docs.py .
       - name: Scripts' tests
         run: python3 -m unittest discover -s tests
       - name: Shell syntax

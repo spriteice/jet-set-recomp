@@ -5,6 +5,7 @@
 """
 import hashlib
 import importlib.util
+import json
 import os
 import pathlib
 import shutil
@@ -25,6 +26,7 @@ def load(name: str):
 
 make_gdi = load("02_make_gdi")
 audit = load("audit_repo")
+check_docs = load("check_docs")
 
 SECTOR = make_gdi.SECTOR_SIZE
 CUE = """REM SINGLE-DENSITY AREA
@@ -581,6 +583,209 @@ class AuditIndex(unittest.TestCase):
         (self.root / "other.md").write_bytes(self.TRACE)
         result = self.run_audit()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+
+class CheckDocs(unittest.TestCase):
+    """The docs check follows each pointer in the documents to its target, in made-up documents."""
+    PIN = "6154c9aa3a86c9310cdbacca67bdadeaf41fb9ac"
+
+    def setUp(self):
+        self.root = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.root)
+        # The least a checkout holds for the check to pass: a document, and the pin in its three places.
+        self.write("data/dream-recomp.pin", f"# The pinned commit.\n{self.PIN}\n")
+        self.write("data/baseline.json", '{"built_from": "dream-recomp 6154c9aa3a86, this repo\'s pin"}\n')
+        self.write("docs/status.md", "# Status\n\n## Now\n\n- **Pin:** `6154c9a` (`data/dream-recomp.pin`).\n")
+
+    def write(self, name: str, text: str, root: pathlib.Path | None = None) -> pathlib.Path:
+        path = (root or self.root) / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+        return path
+
+    def check(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-I", str(ROOT / "scripts/check_docs.py"), str(self.root), *args],
+                              capture_output=True, text=True)
+
+    def git(self, *args: str, root: pathlib.Path | None = None) -> str:
+        env = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com",
+                   GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.com")
+        return subprocess.run(["git", "-C", str(root or self.root), *args], capture_output=True, check=True,
+                              text=True, env=env).stdout.strip()
+
+    def test_this_repositorys_own_documents_pass(self):
+        result = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/check_docs.py"), str(ROOT)],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertRegex(result.stdout, r"OK: \d+ documents, \d+ links, \d+ section names")
+
+    def test_made_up_documents_with_nothing_wrong_pass(self):
+        result = self.check()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        # The pin in the status is a hash too, and nothing here can say whose: it is counted, never passed.
+        self.assertEqual(result.stdout.splitlines(), [
+            "note: 1 hash(es) not checked (ROOT isn't a git checkout, --dream wasn't given): 6154c9a",
+            "OK: 1 documents, 0 links, 0 section names, 0 of 1 hashes"])
+
+    def test_a_link_to_a_file_that_isnt_tracked_is_found(self):
+        self.write("README.md", "# Readme\n")
+        self.write("docs/plan.md", "# Plan\n\n"
+                   "[the status](status.md), [the readme](../README.md#licence), [the data](../data),\n"
+                   "[a web page](https://example.com/gone.md), [a part](#part), [gone](history.md),\n"
+                   "[outside](../../elsewhere.md), and `[a sample](sample.md)` in code.\n\n"
+                   "```\n[fenced](fenced.md)\n```\n")
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("docs/plan.md:4: the link to history.md names no tracked file (docs/history.md)", result.stdout)
+        self.assertIn("docs/plan.md:5: the link to ../../elsewhere.md leaves the repository", result.stdout)
+        self.assertIn("NOT OK: 2 finding(s) in 3 documents, 5 links", result.stdout)
+
+    def test_a_quoted_section_name_names_a_heading_or_a_bold_opening(self):
+        self.write("docs/rules.md", "# Rules\n\n## Before every commit\n\n## 4. The project\n\n"
+                   "- **Divergence,** our commits that upstream doesn't have.\n\n"
+                   "```sh\n# change, rebuild\n```\n\n## Phase 10\n")
+        good = ('`docs/rules.md`, "Before every commit" and "Divergence"; [the rules](docs/rules.md),\n'
+                '"Phase 10"; `docs/rules.md`, section 4; and `reviews/elsewhere.md`, "Anything".\n')
+        self.write("CLAUDE.md", "# Start here\n\n" + good)
+        result = self.check()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("note: 1 section name(s) not checked: their documents aren't tracked here", result.stdout)
+        self.assertIn("4 section names", result.stdout)
+        # The heading was renamed or moved away, and the pointer stayed: each form is found, with its line.
+        self.write("CLAUDE.md", "# Start here\n\n" + good +
+                   '`docs/rules.md`, "Before every commit" and "What\'s open".\n'  # line 5
+                   '[the rules](docs/rules.md),\n  "Things that bite".\n'  # line 6, wrapped
+                   '`docs/rules.md`, "Phase 1".\n'  # line 8: "Phase 10" is another section
+                   '`docs/rules.md`, "change, rebuild".\n'  # line 9: a comment in a code block is no heading
+                   "`docs/rules.md`, sections 4 and 5.\n")  # line 10
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        for line, name in ((5, "What's open"), (6, "Things that bite"), (8, "Phase 1"), (9, "change, rebuild")):
+            self.assertIn(f'CLAUDE.md:{line}: "{name}" is no heading of docs/rules.md', result.stdout)
+        self.assertIn('CLAUDE.md:10: docs/rules.md has no heading that starts "5."', result.stdout)
+        self.assertIn("NOT OK: 5 finding(s)", result.stdout)
+
+    def test_the_pin_is_the_same_in_its_three_places(self):
+        self.write("docs/status.md", "# Status\n\n- **Pin:** `71d5a66` (`data/dream-recomp.pin`).\n")
+        self.write("data/baseline.json", '{"built_from": "dream-recomp 71d5a6639dd2, this repo\'s pin"}\n')
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("docs/status.md:3: the Pin line says 71d5a66, and data/dream-recomp.pin holds 6154c9aa3a86",
+                      result.stdout)
+        self.assertIn("data/baseline.json: built_from names 71d5a6639dd2, and data/dream-recomp.pin holds 6154c9aa3a86",
+                      result.stdout)
+        self.write("data/baseline.json", "not json\n")
+        self.assertIn("data/baseline.json: isn't the JSON object it should be", self.check().stdout)
+        self.write("data/dream-recomp.pin", "6154c9a\n")
+        self.assertIn("data/dream-recomp.pin: holds no full 40-digit hash", self.check().stdout)
+        (self.root / "data/dream-recomp.pin").unlink()
+        self.assertIn("data/dream-recomp.pin: not tracked", self.check().stdout)
+
+    def test_a_status_file_over_its_size_is_found(self):
+        status = (self.root / "docs/status.md").read_text()
+        self.write("docs/status.md", status + "x" * (check_docs.STATUS_MAX_BYTES - len(status)))
+        self.assertEqual(self.check().returncode, 0)
+        self.write("docs/status.md", status + "x" * (check_docs.STATUS_MAX_BYTES - len(status) + 1))
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("docs/status.md: 8,001 bytes, over 8,000", result.stdout)
+
+    def test_a_hash_that_is_no_commit_is_found_once_both_repositories_can_be_asked(self):
+        dream = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, dream)
+        for repo, message in ((self.root, "ours"), (dream, "theirs")):
+            self.git("init", "-q", root=repo)
+            self.git("commit", "-q", "--allow-empty", "--no-gpg-sign", "-m", message, root=repo)
+        ours, theirs = self.git("rev-parse", "HEAD"), self.git("rev-parse", "HEAD", root=dream)
+        gone = next(word for word in ("1234567", "7654321") if not ours.startswith(word) and not theirs.startswith(word))
+        # The pin is a dream-recomp commit, as it is in the real documents.
+        self.write("data/dream-recomp.pin", theirs + "\n")
+        self.write("data/baseline.json", json.dumps({"built_from": f"dream-recomp {theirs[:12]}, this repo's pin"}))
+        self.write("docs/status.md", f"# Status\n\n- **Pin:** `{theirs[:7]}` (`data/dream-recomp.pin`).\n")
+        self.write("docs/history.md", f"# History\n\nOurs `{ours[:7]}`, theirs `{theirs[:12]}`, the range\n"
+                   f"`{theirs[:7]}..{theirs[:8]}`, libchdr's `8e7b8bd`, and `{gone}`.\n"
+                   f"A file's SHA-1, not a commit: `{'0' * 40}`.\n\n```\ngit show abcdef0\n```\n")
+        self.git("add", ".")
+        # Without dream-recomp, a word that is no commit here may be one there: counted, not found.
+        result = self.check()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("note: 4 hash(es) not checked (--dream wasn't given)", result.stdout)
+        self.assertIn("2 of 6 hashes", result.stdout)
+        # With it, and its full history, the one that is a commit nowhere is found.
+        result = self.check("--dream", str(dream))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn(f"docs/history.md:4: `{gone}` is no commit here or in dream-recomp", result.stdout)
+        self.assertIn("NOT OK: 1 finding(s)", result.stdout)
+        # A shallow clone may only be missing the commit, so nothing is called wrong from it.
+        self.git("commit", "-q", "--allow-empty", "--no-gpg-sign", "-m", "second", root=dream)
+        shallow = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, shallow)
+        subprocess.run(["git", "clone", "-q", "--depth", "1", dream.as_uri(), str(shallow)], check=True)
+        result = self.check("--dream", str(shallow))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("hash(es) not checked (--dream is a shallow clone)", result.stdout)
+        result = self.check("--dream", str(self.root / "docs"))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("not a git checkout", result.stderr)
+
+    def test_what_is_staged_is_checked_not_the_working_tree(self):
+        self.git("init", "-q")
+        plan = self.write("docs/plan.md", "# Plan\n\n[gone](history.md)\n")
+        self.git("add", ".")
+        plan.write_text("# Plan\n")  # corrected, and not staged: the commit would still hold the link
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("docs/plan.md:3: the link to history.md", result.stdout)
+        self.git("add", ".")
+        self.assertEqual(self.check().returncode, 0)
+        # A file that exists and isn't tracked is no target either: the commit wouldn't hold it.
+        self.write("docs/history.md", "# History\n")
+        self.write("docs/plan.md", "# Plan\n\n[the history](history.md)\n")
+        self.git("add", "docs/plan.md")
+        self.assertIn("names no tracked file", self.check().stdout)
+
+    def test_the_bug_list_and_its_files_must_agree(self):
+        shared = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, shared)
+        self.write("known-bugs.md", "# Known bugs\n\n| # | Bug | Where | Critical? | State |\n|---|---|---|---|---|\n"
+                   "| [1](known-bugs/bug-001.md) | Shadows aren't drawn | renderer | Not decided | Open |\n"
+                   "| [2](known-bugs/bug-002.md) | A build with no FMA drifts | Toolchain | No | Fixed |\n", shared)
+        self.write("known-bugs/bug-001.md", "# Bug 1: Shadows aren't drawn\n\n## Bug\n", shared)
+        self.write("known-bugs/bug-002.md", "# Bug 2: A build with no FMA drifts\n", shared)
+        result = self.check("--shared", str(shared))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("2 bug lines", result.stdout)
+        index = shared / "known-bugs.md"
+        index.write_text(index.read_text() +
+                         "| [3](known-bugs/bug-003.md) | A run stopped at frame 82 | emitter | Yes | Fixed |\n"
+                         "| [4](known-bugs/bug-004.md) | It doesn't compile headless | runtime | No | Fixed |\n"
+                         "| [5](known-bugs/bug-004.md) | Textures flicker to black | renderer | No | Open |\n")
+        self.write("known-bugs/bug-002.md", "# Bug 2: A MinGW build drifts\n", shared)  # retitled in one place
+        self.write("known-bugs/bug-004.md", "Notes with no title line\n", shared)
+        self.write("known-bugs/bug-006.md", "# Bug 6: Depth is wrong between models\n", shared)  # no line
+        self.write("known-bugs/notes.md", "stray\n", shared)
+        result = self.check("--shared", str(shared))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        for finding in ('known-bugs/bug-002.md:1: the title isn\'t its line\'s in known-bugs.md: '
+                        '"A MinGW build drifts" here, "A build with no FMA drifts" there',
+                        "known-bugs.md:7: bug 3 has no file known-bugs/bug-003.md",
+                        'known-bugs/bug-004.md:1: the first line isn\'t "# Bug 4: ..."',
+                        "known-bugs.md:9: bug 5 links known-bugs/bug-004.md, not known-bugs/bug-005.md",
+                        "known-bugs/bug-006.md: has no line in known-bugs.md",
+                        "known-bugs/notes.md: isn't named bug-NNN.md"):
+            self.assertIn(finding, result.stdout)
+        self.assertIn("NOT OK: 6 finding(s)", result.stdout)
+        # A shared folder that can't be seen is said, never passed over.
+        result = self.check("--shared", str(shared / "none"))
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("known-bugs.md: not found, so the bug list went unchecked", result.stdout)
+
+    def test_a_folder_with_no_documents_is_refused(self):
+        with tempfile.TemporaryDirectory() as folder:
+            result = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/check_docs.py"), folder],
+                                    capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("holds no Markdown file", result.stderr)
 
 
 class GitSetup(unittest.TestCase):

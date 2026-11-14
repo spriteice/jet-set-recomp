@@ -73,7 +73,12 @@ and it made Windows drift from Linux at frame 51, so a MinGW build without FMA d
 ## Before a commit
 
 **In Jet Set Recomp:** `python3 scripts/audit_repo.py . --commits HEAD` reports CLEAN,
+`python3 scripts/check_docs.py .` reports OK,
 `python3 -m unittest discover -s tests` passes, and `bash -n` and `shellcheck` pass on every script. The
+docs check follows the documents' pointers: links, quoted section names, the pin in its three places,
+commit hashes, and the status file's size. Give it `--dream PATH`, a dream-recomp clone with full
+history, or it only counts the hashes that are dream-recomp's; and in a project thread give it
+`--shared FOLDER`, to check `known-bugs.md` against the files in `known-bugs/`. The
 audit checks names only with a denylist: in a sandbox, write the maintainer's name to
 `.git/info/audit-denylist` (never a tracked file); CI reads it from the `AUDIT_DENYLIST` secret.
 `.github/workflows/ci.yml` runs the same on GitHub, which has no disc. In a clone of this repo,
