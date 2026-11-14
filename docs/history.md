@@ -17,6 +17,33 @@ Newest first. One dated entry for each thing done or measured: what, its numbers
 evidence is. Everything below this section was `status.md`'s text on 14 November 2026, moved here
 unchanged.
 
+- **14 November 2026: the rules review, and the checks it added.** A review of the rules and the
+  workflow ranked 11 changes, and the maintainer chose the seven that change no rule. What landed,
+  each on a card ([decisions.md](decisions.md), 14 November) and each with its review pack in the
+  shared folder's `review-packs/`:
+  - `0f63b75`, the PC claim's steps in the maintainer's words (`rules-review-00-pc-claim-rule`).
+  - `aaa4f15`, `7b36d64`, `a089e8d` and `cb49ea3`: six stale lines corrected; `status.md` split from
+    33 KB into the state (3 KB), [plan.md](plan.md) and this file; the shared folder's
+    `known-bugs.md` split from 59 KB into an index (9 KB) and one file for each of its 45 bugs; and
+    the table in `CLAUDE.md` of what to read again, and when (`rules-review-01-tidy-up` to
+    `rules-review-04-re-read-table`).
+  - `4a81c8a`, `scripts/check_docs.py` and its CI step, and `39d1e38`, `scripts/check_push.py` as
+    the pre-push hook: 18 tests, and CI run 11 passed (`rules-review-06a-docs-check`,
+    `rules-review-06b-push-hook`).
+  - `b6ce209`, `scripts/30_compare_runs.py`: 9 tests, and CI run 12 passed. On the real reports of
+    the shared folder's `captures/2fa6456-6154c9a` it prints MATCH for 5 of 5 runs
+    (`rules-review-04a-compare-runs`).
+  - `3dec93a`, `scripts/review_pack.py`: 8 tests, and CI run 13 passed
+    (`rules-review-08-review-pack`).
+  - `eff3299`, `scripts/31_pin_check.py`: 15 tests, each of 94 one-line breaks of the script fails
+    at least one of them, and CI run 15 passed (`rules-review-04b-pin-check`). It is **unverified on
+    the game**: no sandbox had the disc, so it has never built the game, captured the gate on it or
+    made a run. The first pin move that uses it makes the by-hand steps as well, and compares the
+    two.
+
+  The scripts' tests went from 57 to 107. None of it changes what the game runs, so no build, gate
+  or 10-minute run was made for it.
+
 ## Where it stood on 14 November 2026
 
 - **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
