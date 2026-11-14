@@ -15,6 +15,20 @@ Read these before you work, in this order:
 If these disagree, stop and tell the maintainer. Don't pick one. If you can't reach the shared folder
 (you're not in the project), say so and work from `docs/status.md`.
 
+A rule read at the start of a long thread fades. At each of these moments, read the section again from
+the file, not from memory:
+
+| Before you | Read again |
+|---|---|
+| Stage a commit, or propose one | `docs/project-rules.md`, "Before every commit"; `docs/build-and-test-reference.md`, "Before a commit" and "Review pack" |
+| Push, or ask to | `docs/project-instructions.md`, section 2, and section 5 in a pre-approved thread |
+| Move the dream-recomp pin | Section 2's pin rule; `docs/build-and-test-reference.md`, "The regression gate" and "The 10-minute runs" |
+| Change dream-recomp | `docs/project-rules.md`, "Where code goes"; `docs/upstream.md` |
+| Do anything on the maintainer's PC | `docs/project-instructions.md`, section 4; `docs/status.md`, "Things that bite" |
+| Deliver a build | `docs/build-and-test-reference.md`, "Delivery" |
+| Report on a run | `docs/build-and-test-reference.md`, "Reports" |
+| Go on after your context was summarised | `docs/project-instructions.md`, section 1: say so, write the handoff, and ask to move. Then this file again |
+
 Code is built by three principles, in priority order: functional, robust, performant
 (`docs/project-rules.md`, "How it's written").
 
