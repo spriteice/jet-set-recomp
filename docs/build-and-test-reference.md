@@ -174,6 +174,13 @@ my approval, and until then its speed isn't compared. Sandboxes differ by about 
 more than 15% is a finding that must be explained, and anything smaller is noise. It isn't the Ally X:
 only a device step there shows the real bar.
 
+`python3 scripts/30_compare_runs.py RUN=REPORT ...` makes the comparison: it reads each report's own
+lines, prints one table against `data/baseline.json`, and exits 1 on a count that differs, a run that
+didn't stop at its time limit, or a speed more than 15% under the baseline's. `--dir FOLDER` reads
+`FOLDER/RUN.report.txt` for every run, `--all` makes a run with no report a finding, as a pin move
+needs, and `--speed none` leaves speed out when the runs shared the machine with other work, which the
+report then says. Its table goes in the report. What a difference means is still explained by hand.
+
 `data/baseline.json` changes only with my approval.
 
 ## Delivery

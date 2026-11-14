@@ -27,6 +27,7 @@ def load(name: str):
 make_gdi = load("02_make_gdi")
 audit = load("audit_repo")
 check_docs = load("check_docs")
+compare_runs = load("30_compare_runs")
 
 SECTOR = make_gdi.SECTOR_SIZE
 CUE = """REM SINGLE-DENSITY AREA
@@ -440,6 +441,182 @@ class CheckSdlAudio(unittest.TestCase):
                                     capture_output=True, text=True)
             self.assertEqual(result.returncode, 2)
             self.assertIn("not a file", result.stderr)
+
+
+def run_report(run: dict, speed: float = 1.8, stop: str = "time limit", **changed) -> str:
+    """A made-up run report with a baseline run's counts, in the lines dream-recomp's launcher prints
+    (runtime/boot/boot_main.cpp, report_text), the ones nothing reads included. `changed` replaces a
+    count by its baseline key, and None leaves its line out."""
+    count = {**run, **changed}
+    seconds = count.get("max_seconds", 600)
+    lines = [f"stop: {stop}",
+             f"guest: {seconds:.3f} s ({seconds * 200000000 + 475} cycles), {count['frames']} frames, pc 0x0c226238",
+             f"host: {seconds / speed:.2f} s ({speed:.1f}x real time)",
+             f"interrupts delivered: {count['interrupts']} (max nesting 1), traps: {count['traps']}",
+             "task-switching RTEs: 0",
+             "syscalls: flashrom=17 gdrom=97535 sysinfo=5",
+             f"GD-ROM sectors read: {count['gdrom_sectors']}",
+             f"PVR: 271038168 TA chunks, 17933 list inits, {count['renders']} renders ({count['renders']} done), "
+             "17928 frame swaps, 0 texture words, 0 yuv words",
+             "  opaque: 261 polygons, 0 sprites, 0 modvols, 7598 vertices, 1 ends"]
+    if count.get("memory_card") is not None:
+        lines.append(f"memory card: {count['memory_card']}")
+    lines += ["maple: 35950 transfers, 143818 frames, 107850 to empty ports, 35949 pad polls",
+              f"AICA: arm7 running at pc 0x0000093c, {count['sound_samples_total']} samples, 600761 FIQs; mixer: "
+              f"9 key-ons, 2 channels active, {count['sound_samples_nonzero']} of {count['sound_samples_total']} "
+              "samples non-zero, dsp running; SCPU sh4->arm 0, arm->sh4 0",
+              f"untranslated call targets: {count['untranslated_call_targets']}"]
+    lines += [f"  0x0c28ed{8 + at:x}a called from 0x0c01bd94" for at in range(count["untranslated_call_targets"])]
+    if count.get("unmapped_accesses") is not None:
+        lines.append(f"unmapped memory accesses: {count['unmapped_accesses']}")
+    return "\n".join(lines) + "\n"
+
+
+class CompareRuns(unittest.TestCase):
+    """30_compare_runs.py against the real data/baseline.json, with reports made up from its own counts."""
+    RUNS = json.loads((ROOT / "data/baseline.json").read_text())["runs"]
+
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+
+    def report(self, name: str, **changed) -> str:
+        """Writes the run's report into the folder, as --dir reads it, and gives RUN=REPORT for it."""
+        path = self.folder / f"{name}.report.txt"
+        path.write_text(run_report(self.RUNS[name], **changed))
+        return f"{name}={path}"
+
+    def compare(self, *args: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, "-I", str(ROOT / "scripts/30_compare_runs.py"), *args],
+                              capture_output=True, text=True)
+
+    def test_reports_with_the_baselines_own_counts_match_it(self):
+        for name in self.RUNS:
+            self.report(name)
+        result = self.compare("--dir", str(self.folder), "--all")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        table = result.stdout.splitlines()
+        self.assertEqual(table[0], "| | " + " | ".join(self.RUNS) + " |")
+        self.assertIn("| Frames | 35977 | 35977 | 35977 | 35977 | 79438 |", table)
+        self.assertIn("| Result | equal | equal | equal | equal | equal |", table)
+        self.assertEqual(table[-1], f"MATCH: {len(self.RUNS)} of {len(self.RUNS)} runs, every count equal to "
+                                    "data/baseline.json, every compared speed within 15% of it")
+
+    def test_a_report_from_the_windows_build_reads_the_same(self):
+        """jgr_boot.exe ends each line of its report with CR LF, as the run logs from the PC show."""
+        path = self.folder / "no_input_vmu.report.txt"
+        path.write_bytes(run_report(self.RUNS["no_input_vmu"], speed=2.4).replace("\n", "\r\n").encode())
+        self.assertEqual(self.RUNS["no_input_vmu"]["windows_pc_speed_x"], 2.4)
+        result = self.compare("--speed", "windows_pc", f"no_input_vmu={path}")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("| Stopped | time limit, 600.000 s |", result.stdout)
+        self.assertIn("| Speed | 2.4x (baseline 2.4x) |", result.stdout)
+        self.assertIn("| Result | equal |", result.stdout)
+
+    def test_every_count_the_baseline_holds_is_compared(self):
+        """Each one changed alone is a finding that names the run, the count, and both numbers."""
+        counts = dict(compare_runs.COUNTS)
+        self.assertEqual(set(counts) | compare_runs.DESCRIPTIONS | set(compare_runs.SPEEDS.values()),
+                         set().union(*self.RUNS.values()), "a key of the baseline that the script doesn't know")
+        run = self.RUNS["presses_vmu"]
+        for key, title in counts.items():
+            with self.subTest(key):
+                other = "16 block reads, 0 block writes, 1 media-info reads, 1 screen writes" if key == "memory_card" \
+                    else run[key] + 1
+                result = self.compare(self.report("presses_vmu", **{key: other}))
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(f"presses_vmu: {title.lower()} {other}, baseline {run[key]}", result.stdout)
+                self.assertIn(f"| {title} | {other} (baseline {run[key]}) |", result.stdout)
+                self.assertIn("| Result | DIFFERENT |", result.stdout)
+                self.assertIn("DIFFERENT: ", result.stdout.splitlines()[-1])
+
+    def test_a_speed_more_than_15_percent_under_the_baseline_is_found(self):
+        self.assertEqual(self.RUNS["no_input"]["linux_sandbox_speed_x"], 1.6)
+        result = self.compare(self.report("no_input", speed=1.4))  # 12.5% under: noise between sandboxes
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("| Speed | 1.4x (baseline 1.6x, 12.5% under) |", result.stdout)
+        result = self.compare(self.report("no_input", speed=1.3))  # 18.8% under
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no_input: speed 1.3x is 18.8% under the baseline's 1.6x, more than the 15% margin", result.stdout)
+        # Runs that shared the machine say nothing about speed: asked for, and said in the result.
+        result = self.compare("--speed", "none", self.report("no_input", speed=0.9))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("note: no speed was compared (--speed none)", result.stdout)
+        self.assertIn("no speed compared", result.stdout.splitlines()[-1])
+        # A run the baseline has no speed for on that platform isn't compared, and the result says so.
+        self.assertNotIn("windows_pc_speed_x", self.RUNS["no_input"])
+        result = self.compare("--speed", "windows_pc", self.report("no_input", speed=0.9))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("note: no_input's speed wasn't compared: the baseline has no windows_pc_speed_x for it", result.stdout)
+
+    def test_a_card_run_and_a_run_without_a_card_arent_taken_for_each_other(self):
+        card = self.RUNS["no_input_vmu"]["memory_card"]
+        result = self.compare(self.report("no_input", memory_card=card))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no_input: the report has a memory card line, and the baseline's run has none", result.stdout)
+        result = self.compare(self.report("no_input_vmu", memory_card=None))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn(f"no_input_vmu: the report has no line for memory card (baseline {card})", result.stdout)
+
+    def test_a_run_that_stopped_early_or_was_cut_short_is_found(self):
+        path = self.folder / "no_input.report.txt"
+        path.write_text(run_report(self.RUNS["no_input"], stop="fault"))
+        result = self.compare(f"no_input={path}")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn('no_input: the report ran 600.000 s of guest time and stopped on "fault"', result.stdout)
+        path.write_text(run_report(dict(self.RUNS["no_input"], max_seconds=300)))  # --max-seconds 300
+        result = self.compare(f"no_input={path}")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no_input: the report ran 300.000 s of guest time", result.stdout)
+        # A report cut off before its last line, and a file that is no report at all.
+        result = self.compare(self.report("no_input", unmapped_accesses=None))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("no_input: the report has no line for unmapped accesses (baseline 0)", result.stdout)
+        path.write_text("Segmentation fault\n")
+        result = self.compare(f"no_input={path}")
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("| Frames | missing (baseline 35977) |", result.stdout)
+        self.assertIn("no_input: the report has no guest line", result.stdout)
+        self.assertIn("no_input: the report has no host line, so no speed", result.stdout)
+
+    def test_untranslated_targets_are_listed_as_the_report_prints_them(self):
+        result = self.compare(self.report("presses", untranslated_call_targets=2))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("presses: untranslated call targets 2, baseline 0", result.stdout)
+        self.assertIn("presses:   0x0c28ed8a called from 0x0c01bd94", result.stdout)
+        self.assertIn("presses:   0x0c28ed9a called from 0x0c01bd94", result.stdout)
+
+    def test_a_run_with_no_report_is_said_and_is_a_finding_when_all_are_needed(self):
+        result = self.compare(self.report("no_input"), self.report("presses"))
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertIn("note: not compared, no report given: no_input_vmu, presses_vmu, "
+                      "tutorial_mission1_kogane_replay", result.stdout)
+        self.assertIn("MATCH: 2 of 5 runs", result.stdout)
+        result = self.compare("--all", "--dir", str(self.folder))
+        self.assertEqual(result.returncode, 1, result.stdout)
+        self.assertIn("presses_vmu: no report was given, and --all needs every run of the baseline", result.stdout)
+        self.assertIn("DIFFERENT: 3 finding(s) in 2 of 5 runs", result.stdout)
+
+    def test_what_cant_be_compared_stops_it_and_says_why(self):
+        for args, why in ((["no_input=" + str(self.folder / "none.txt")], "can't read no_input's report"),
+                          (["attract=" + self.report("no_input").split("=")[1]], "attract isn't a run of the baseline"),
+                          ([self.report("no_input"), self.report("no_input")], "no_input was given twice"),
+                          ([str(self.folder / "no_input.report.txt")], "give each report as RUN=REPORT"),
+                          (["--dir", str(self.folder / "none")], "not a folder"),
+                          (["--baseline", str(self.folder / "none.json"), self.report("no_input")], "can't read the baseline"),
+                          ([], "no report was given")):
+            with self.subTest(why):
+                result = self.compare(*args)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertIn(why, result.stderr)
+                self.assertNotIn("Traceback", result.stderr)
+        # A count added to the baseline that the script can't read from a report would go uncompared
+        # in silence, so it stops the script instead.
+        baseline = self.folder / "baseline.json"
+        baseline.write_text(json.dumps({"runs": {"no_input": dict(self.RUNS["no_input"], texture_words=0)}}))
+        result = self.compare("--baseline", str(baseline), self.report("no_input"))
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("the run no_input has texture_words, which this script doesn't know", result.stderr)
 
 
 class BuildScripts(unittest.TestCase):
