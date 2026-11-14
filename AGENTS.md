@@ -12,7 +12,7 @@ adds the map. Code here is functional first, then robust, then performant
 | `data/inputs.sha256` | The disc's hashes |
 | `data/dream-recomp.pin` | The dream-recomp commit this builds on |
 | `data/baseline.json` | The numbers a run is compared with |
-| `scripts/` | Git setup, sandbox setup, verify, fetch, make the `.gdi`, get the boot file, build, package, compare runs, audit, docs check, push check |
+| `scripts/` | Git setup, sandbox setup, verify, fetch, make the `.gdi`, get the boot file, build, package, compare runs, audit, docs check, push check, review pack |
 | `packaging/` | What goes in a delivery folder beside the program |
 | `tests/` | Tests of the scripts, with made-up data and no disc |
 | `third_party/dream-recomp/` | Fetched by script, ignored by git, and read-only here |

@@ -1339,6 +1339,270 @@ class SetupErrors(unittest.TestCase):
         self.assertNotIn("Traceback", result.stderr)
 
 
+class ReviewPack(unittest.TestCase):
+    """review_pack.py in a made-up checkout: this repository's tracked files, its tests swapped for one
+    small test (the real ones would run this class again, inside itself), one signed commit, and a
+    stand-in shellcheck, so the test needs none installed."""
+    SMALL_TEST = "import unittest\n\n\nclass Small(unittest.TestCase):\n    def test_it_holds(self):\n        self.assertTrue({})\n"
+    GIT_TEST = ("import pathlib\nimport subprocess\nimport tempfile\nimport unittest\n\n\n"
+                "class Small(unittest.TestCase):\n    def test_it_makes_a_repository_of_its_own(self):\n"
+                "        with tempfile.TemporaryDirectory() as folder:\n"
+                "            pathlib.Path(folder, 'note.txt').write_text('a note')\n"
+                "            for args in (['init', '-q'], ['add', 'note.txt']):\n"
+                "                subprocess.run(['git', '-C', folder, *args], check=True, capture_output=True)\n")
+    MESSAGE = "Add a note\n\nIt says what the note is for.\n\nCo-Authored-By: Someone <a@example.com>\n"
+
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        self.repo, self.pack = self.folder / "repo", self.folder / "packs/one"
+        for entry in audit.tracked_files(ROOT):
+            rel = entry.path.relative_to(ROOT)
+            if rel.parts[0] != "tests" and entry.path.is_file():
+                (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(entry.path, self.repo / rel)
+        self.write("tests/test_small.py", self.SMALL_TEST.format("True"))
+        (self.folder / "bin").mkdir()
+        (self.folder / "gitconfig").write_text("")
+        self.shellcheck("exit 0")
+        name, email = audit.IDENTITY.rstrip(">").split(" <")
+        self.env = dict(os.environ, HOME=str(self.folder), GIT_CONFIG_GLOBAL=str(self.folder / "gitconfig"),
+                        GIT_AUTHOR_NAME=name, GIT_AUTHOR_EMAIL=email, GIT_COMMITTER_NAME=name,
+                        GIT_COMMITTER_EMAIL=email, JGR_AUDIT_DENYLIST="",
+                        PATH=f"{self.folder / 'bin'}{os.pathsep}{os.environ['PATH']}")
+        for name in ("GIT_INDEX_FILE", "GIT_DIR", "GIT_WORK_TREE"):
+            self.env.pop(name, None)
+        self.git("-c", "init.defaultBranch=main", "init", "-q")
+        self.git("add", "-A")
+        self.git("commit", "-q", "--no-gpg-sign", "-m", "The checkout")
+        # A stand-in signature header, as in AuditCommits: the audit checks that one is there.
+        raw = subprocess.run(["git", "-C", str(self.repo), "cat-file", "commit", "HEAD"], capture_output=True, check=True).stdout
+        headers, body = raw.split(b"\n\n", 1)
+        signed = subprocess.run(["git", "-C", str(self.repo), "hash-object", "-t", "commit", "-w", "--stdin"],
+                                input=headers + PushCheck.SIGNATURE + b"\n\n" + body, capture_output=True, check=True)
+        self.git("update-ref", "HEAD", signed.stdout.decode().strip())
+        self.message = self.write("../message.txt", self.MESSAGE)
+
+    def write(self, name: str, text: str) -> pathlib.Path:
+        path = self.repo / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text)
+        return path
+
+    def shellcheck(self, body: str):
+        """A stand-in shellcheck on PATH: it answers --version, and otherwise does what `body` says."""
+        tool = self.folder / "bin/shellcheck"
+        tool.write_text(f'#!/bin/sh\nif [ "$1" = --version ]; then printf "ShellCheck\\nversion: 0.0.1\\n"; exit 0; fi\n{body}\n')
+        tool.chmod(0o755)
+
+    def git(self, *args: str, **env: str) -> str:
+        return subprocess.run(["git", "-C", str(self.repo), *args], capture_output=True, text=True, check=True,
+                              env=dict(self.env, **env)).stdout
+
+    def make_pack(self, *args: str, **env: str) -> subprocess.CompletedProcess:
+        return subprocess.run([sys.executable, str(self.repo / "scripts/review_pack.py"), str(self.pack),
+                               "--message", str(self.message), *args], capture_output=True, text=True,
+                              env=dict(self.env, **env))
+
+    def stage_a_note(self):
+        self.write("docs/notes.md", "# Notes\n\nSee [the status](status.md).\n")
+        self.write("scripts/99_note.sh", "#!/usr/bin/env bash\n# SPDX-License-Identifier: GPL-2.0-only\necho note\n")
+        self.git("add", "docs/notes.md", "scripts/99_note.sh")
+
+    def test_a_staged_change_gets_its_diff_its_message_its_documents_and_its_checks(self):
+        self.stage_a_note()
+        head, tree = self.git("rev-parse", "HEAD"), self.git("write-tree")
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(f"READY FOR REVIEW: 6 checks passed on the staged tree {tree[:7]}", result.stdout)
+        self.assertEqual((self.pack / "commit.diff").read_text(), self.git("diff", "--cached"))
+        self.assertEqual((self.pack / "COMMIT_MSG.txt").read_text(), self.MESSAGE)
+        self.assertEqual((self.pack / "documents/docs/notes.md").read_text(), "# Notes\n\nSee [the status](status.md).\n")
+        self.assertEqual([path.name for path in (self.pack / "documents").rglob("*") if path.is_file()], ["notes.md"])
+        evidence = (self.pack / "evidence/repo-checks.txt").read_text()
+        for line in (f"The staged tree is {tree.strip()}, a change against HEAD", "$ python3 scripts/audit_repo.py . --commits HEAD",
+                     "$ python3 scripts/audit_repo.py . --message COMMIT_MSG.txt", "$ python3 scripts/check_docs.py .",
+                     "Ran 1 test in", "== bash -n on the 11 shell scripts of the staged tree", "-> everything changed is staged"):
+            self.assertIn(line, evidence)
+        self.assertEqual(evidence.count("-> passed"), 6, evidence)
+        review = (self.pack / "REVIEW.md").read_text()
+        self.assertIn("# Jet Set Recomp: Add a note", review)
+        self.assertIn(f"on `{head[:7]}`. The staged\ntree that was checked is `{tree[:7]}`", review)
+        self.assertIn("| 1 | `git status`, the staged files, the audit | 2 file(s) staged. Audit CLEAN", review)
+        self.assertIn("| 2 | The full diff | `commit.diff`: 2 files changed, 6 insertions(+) |", review)
+        self.assertIn("| 3 | The commit message | `COMMIT_MSG.txt`; the message audit is CLEAN |", review)
+        self.assertIn("| 5 | The documents whole | `documents/docs/notes.md` |", review)
+        self.assertIn("| 6 | The checks for the tree | 1 tests pass; the docs check is OK; `bash -n` passes on 11 scripts; "
+                      "shellcheck 0.0.1 passes on them |", review)
+        self.assertEqual(review.count("(to write)"), 3)  # what it changes, check 4, and what is unverified
+        # It made a pack, and nothing else: no commit, and the same staged tree.
+        self.assertEqual((self.git("rev-parse", "HEAD"), self.git("write-tree")), (head, tree))
+
+    def test_the_checks_run_on_what_is_staged_not_on_the_working_tree(self):
+        self.stage_a_note()
+        self.write("tests/test_small.py", self.SMALL_TEST.format("False"))
+        self.git("add", "tests/test_small.py")
+        self.write("tests/test_small.py", self.SMALL_TEST.format("True"))  # mended, and not staged
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("NOT READY: 1 check(s) failed: tests", result.stderr)
+        self.assertIn("**the tests FAIL** (`evidence/repo-checks.txt`)", (self.pack / "REVIEW.md").read_text())
+        evidence = (self.pack / "evidence/repo-checks.txt").read_text()
+        self.assertIn("FAIL: test_it_holds", evidence)
+        self.assertIn("-> 1 line(s) are of files edited or added and not staged", evidence)
+        # And the other way round: staged whole, then broken in the working tree: the test, the script
+        # and the document, with a failing test and a broken script that were never added. None of that
+        # is in the commit, so none of it counts, and none of it is in the pack.
+        self.git("add", "tests/test_small.py")
+        self.write("tests/test_small.py", self.SMALL_TEST.format("False"))
+        self.write("tests/test_untracked.py", self.SMALL_TEST.format("False"))
+        self.write("scripts/98_broken.sh", "if then fi (\n")
+        self.write("scripts/99_note.sh", "if then fi (\n")
+        self.write("docs/notes.md", "# Notes\n\nSee [the history](gone.md).\n")
+        # This stand-in reads the scripts it is given, as shellcheck does, and fails on the broken one.
+        self.shellcheck('for script in "$@"; do if grep -q "if then" "$script"; then echo "$script: SC1000"; exit 1; fi; done')
+        (self.pack / "REVIEW.md").unlink()
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("1 tests pass", (self.pack / "REVIEW.md").read_text())
+        self.assertEqual((self.pack / "documents/docs/notes.md").read_text(), "# Notes\n\nSee [the status](status.md).\n")
+        self.assertEqual((self.pack / "commit.diff").read_text(), self.git("diff", "--cached"))
+        self.assertNotIn("gone.md", (self.pack / "commit.diff").read_text())
+
+    def test_a_check_that_fails_is_named_and_the_pack_is_written_all_the_same(self):
+        self.stage_a_note()
+        self.message.write_text("Add a note\n\nhttps://" + "claude" + ".ai/code/session_x\n")
+        self.shellcheck('echo "SC2086: Double quote to prevent globbing"; exit 1')
+        self.write("docs/notes.md", "# Notes\n\nSee [the history](gone.md).\n")
+        # A script that bash can't read, and not the last one by name: every script is read.
+        self.write("scripts/05_broken.sh", "if then fi (\n")
+        self.git("add", "docs/notes.md", "scripts/05_broken.sh")
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("NOT READY: 4 check(s) failed: message, docs, syntax, shellcheck", result.stderr)
+        review = (self.pack / "REVIEW.md").read_text()
+        for bad in ("**the message audit is NOT CLEAN**", "**the docs check is NOT OK**", "**`bash -n` FAILS**",
+                    "**shellcheck FAILS or is not installed**"):
+            self.assertIn(bad, review)
+        evidence = (self.pack / "evidence/repo-checks.txt").read_text()
+        self.assertIn("a Claude session link in the message", evidence)
+        self.assertIn("docs/notes.md:3: the link to gone.md names no tracked file", evidence)
+        self.assertIn("scripts/05_broken.sh: line 1: syntax error", evidence)
+        self.assertIn("SC2086", evidence)
+        self.assertEqual(evidence.count("-> FAILED"), 4, evidence)
+        self.assertTrue((self.pack / "commit.diff").read_text())
+        # A machine with no shellcheck at all says so, and that is never a pass. Its PATH here holds
+        # git and bash alone, so the test is the same on a machine that has shellcheck.
+        (self.folder / "bin/shellcheck").unlink()
+        for tool in ("git", "bash"):
+            (self.folder / "bin" / tool).symlink_to(shutil.which(tool))
+        result = self.make_pack(PATH=str(self.folder / "bin"))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("NOT READY: 4 check(s) failed: message, docs, syntax, shellcheck", result.stderr)
+        evidence = (self.pack / "evidence/repo-checks.txt").read_text()
+        self.assertIn("could not run shellcheck", evidence)
+        self.assertEqual(evidence.count("-> FAILED"), 4, evidence)
+
+    def test_a_review_that_is_written_already_is_left_as_it_is(self):
+        self.stage_a_note()
+        self.assertEqual(self.make_pack().returncode, 0)
+        review = self.pack / "REVIEW.md"
+        review.write_text("# My review\n\nWritten by hand.\n")
+        self.git("rm", "-q", "--cached", "docs/notes.md")  # the change no longer adds the document
+        self.write("README.md", (self.repo / "README.md").read_text() + "\nOne more line.\n")
+        self.git("add", "README.md")
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(review.read_text(), "# My review\n\nWritten by hand.\n")
+        self.assertIn("is there already and was left as it is. Its checks today:", result.stdout)
+        self.assertIn("  6: 1 tests pass", result.stdout)
+        self.assertEqual((self.pack / "commit.diff").read_text(), self.git("diff", "--cached"))
+        self.assertTrue((self.pack / "documents/README.md").is_file())
+        self.assertFalse((self.pack / "documents/docs").exists())  # the last run's copy is gone with its change
+
+    def test_a_proposal_that_stands_on_another_takes_that_one_as_its_base(self):
+        self.stage_a_note()
+        self.write("tests/test_small.py", self.GIT_TEST)  # as the real tests do: a repository of its own
+        self.git("add", "tests/test_small.py")
+        first = self.git("write-tree").strip()
+        self.write("docs/more.md", "# More\n")
+        self.git("add", "docs/more.md")
+        second = self.git("write-tree").strip()
+        result = self.make_pack("--base", first)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        diff = (self.pack / "commit.diff").read_text()
+        self.assertIn("docs/more.md", diff)
+        self.assertNotIn("docs/notes.md", diff)
+        self.assertIn(f"on the tree `{first[:7]}`, a proposal that isn't committed yet", (self.pack / "REVIEW.md").read_text())
+        # A caller that reads a tree into an index of its own gets a pack of that tree, and the tests'
+        # own repositories don't write into that index.
+        index = self.folder / "index"
+        self.git("read-tree", first, GIT_INDEX_FILE=str(index))
+        (self.pack / "REVIEW.md").unlink()
+        result = self.make_pack(GIT_INDEX_FILE=str(index))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn(f"on the staged tree {first[:7]}", result.stdout)
+        self.assertIn("docs/notes.md", (self.pack / "commit.diff").read_text())
+        self.assertNotIn("docs/more.md", (self.pack / "commit.diff").read_text())
+        self.assertEqual(self.git("write-tree", GIT_INDEX_FILE=str(index)).strip(), first)
+        self.assertEqual(self.git("write-tree").strip(), second)
+
+    def test_the_review_says_whether_the_base_is_the_latest_origin_main(self):
+        """Every commit starts from the latest origin/main (docs/project-instructions.md, section 2)."""
+        self.stage_a_note()
+        head = self.git("rev-parse", "HEAD").strip()
+        self.git("update-ref", "refs/remotes/origin/main", head)
+        self.assertEqual(self.make_pack().returncode, 0)
+        self.assertIn(f"on `{head[:7]}`, which is `origin/main`. The staged", (self.pack / "REVIEW.md").read_text())
+        self.assertIn(f"origin/main is {head}.", (self.pack / "evidence/repo-checks.txt").read_text())
+        # The remote moved on: a commit this checkout has fetched and doesn't stand on.
+        newer = self.git("commit-tree", "-p", head, "-m", "Another thread's commit", "HEAD^{tree}").strip()
+        self.git("update-ref", "refs/remotes/origin/main", newer)
+        (self.pack / "REVIEW.md").unlink()
+        self.assertEqual(self.make_pack().returncode, 0)
+        self.assertIn(f"on `{head[:7]}`, which is not `origin/main`. The staged", (self.pack / "REVIEW.md").read_text())
+
+    def test_the_docs_checks_own_options_reach_it(self):
+        self.stage_a_note()
+        (self.folder / "shared").mkdir()  # a shared folder with no bug list in it
+        result = self.make_pack("--shared", str(self.folder / "shared"))
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("NOT READY: 1 check(s) failed: docs", result.stderr)
+        self.assertIn("known-bugs.md", (self.pack / "evidence/repo-checks.txt").read_text())
+        result = self.make_pack("--dream", str(self.folder / "shared"))  # and a folder that is no clone
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("not a git checkout", (self.pack / "evidence/repo-checks.txt").read_text())
+
+    def test_with_nothing_to_review_it_stops_and_says_why(self):
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("nothing is staged that differs from HEAD", result.stderr)
+        self.assertFalse(self.pack.exists())
+        self.stage_a_note()
+        for args, why in ((["--base", "no-such-rev"], "--base no-such-rev names no commit or tree here"),):
+            result = self.make_pack(*args)
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertIn(why, result.stderr)
+        # A folder that has documents of its own and isn't a pack keeps them: a pack's are replaced.
+        mine = self.folder / "mine"
+        (mine / "documents").mkdir(parents=True)
+        (mine / "documents/letter.txt").write_text("kept\n")
+        result = subprocess.run([sys.executable, str(self.repo / "scripts/review_pack.py"), str(mine), "--message",
+                                 str(self.message)], capture_output=True, text=True, env=self.env)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("has a documents folder and no commit.diff", result.stderr)
+        self.assertEqual([path.name for path in mine.rglob("*")], ["documents", "letter.txt"])
+        self.message.write_text("\n")
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("is empty", result.stderr)
+        self.message.unlink()
+        result = self.make_pack()
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("no commit message at", result.stderr)
+        self.assertFalse(self.pack.exists())
+
+
 # The project's licence (README.md, "Licence"), named at the top of every file that holds code or
 # configuration, so it goes with a file copied out of the repository.
 LICENCE_ID = "GPL-2.0-only"

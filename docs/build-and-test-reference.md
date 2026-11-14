@@ -269,3 +269,12 @@ Everything I need to approve one commit, in one `REVIEW.md` in the shared folder
 `origin/main` it goes on, the testing per step and device, and the six checks of `docs/project-rules.md`
 with each result. In a pre-approved thread it's the commit's record, and says under which pre-approval
 it was made.
+
+`python3 scripts/review_pack.py PACK --message FILE` starts one from the staged change: it writes the
+pack's `commit.diff`, `COMMIT_MSG.txt`, `documents/` and `evidence/repo-checks.txt`, and a `REVIEW.md`
+with checks 1, 2, 3, 5 and 6 filled in. It runs this repository's checks of "Before a commit" above,
+the tests and the shell checks on a copy of exactly what is staged, so a file that was edited and not
+staged takes no part. `--dream` and `--shared` go to the docs check, and `--base REV` is for a
+proposal that stands on one not committed yet. What the change is, check 4, the testing per step and
+device, and what is unverified are written by hand. It commits nothing, and a pack is what was
+checked, not an approval.
