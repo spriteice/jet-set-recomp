@@ -14,9 +14,8 @@ The translated build is playable on Windows, and on Linux on a SteamOS handheld 
 and Game Mode: music, saving, loading, the tutorial and the first level work. Four headless 600
 guest-second runs reach 35,977 frames each with 0 traps, 0 unmapped accesses and 0 calls falling back
 to the interpreter, and so does a recorded play-through of the tutorial and the first mission.
-Shadows aren't drawn, a few textures are wrong, and the attract demo after the title plays out of
-step. On SteamOS, start the game from Steam, in Desktop Mode too: Steam gives the controller only to
-games it starts.
+Shadows aren't drawn and a few textures are wrong. On SteamOS, start the game from Steam, in
+Desktop Mode too: Steam gives the controller only to games it starts.
 [docs/status.md](docs/status.md) has the current state and what's next.
 
 ## Supported disc

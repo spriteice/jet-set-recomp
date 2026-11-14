@@ -4,6 +4,11 @@ The project's durable notes: where the work stands and what's next. Keep this cu
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
+Times are UTC unless marked UTC+8. This repository's history starts on 8 November 2026 with
+`f9f84ae`, so a Jet Set Recomp hash from before that day, in a note or in the name of a build or a
+capture folder, names a commit the repository no longer holds. Build names of 5 November also carry
+`2013fb7`, dream-recomp's `6c098df` before that day's rewrite (`known-bugs.md`, 2).
+
 ## Where it stands
 
 - **Both repos are set up.** `spriteice/dream-recomp` carries our fixes on `main`, and the pin in
@@ -115,14 +120,14 @@ On the i7-10700K and RTX 2080 Ti, in `Building\dreamcast-jgr-build1\`, with `--r
 `jgr_boot.exe --config jgr.toml --rtc-seed 1 --max-seconds 600 --report FILE --write-hash FILE`, with
 `--press` for the second. Windowed: `--window --no-audio --max-seconds N --screenshot-at F`.
 
-| Run | Kind | Frames | Faults, traps, unmapped, untranslated | Interrupts | Renders | Sectors | Non-zero samples | Speed |
+| Run | Kind | Frames | Traps, unmapped, untranslated | Interrupts | Renders | Sectors | Non-zero samples | Speed |
 |---|---|---|---|---|---|---|---|---|
-| w1 | Headless, no input | 35,977 | 0, 0, 0, 0 | 228,345 | 17,927 | 26,023 | 21,975,158 | 2.4x |
-| r10 | The same, cloud Linux, 4 Nov | 35,977 | 0, 0, 0, 0 | 228,345 | 17,927 | 26,023 | 21,975,158 | 1.7x |
-| w2 | Headless, presses | 35,977 | 0, 0, 0, 0 | 237,943 | 17,927 | 26,392 | 25,017,321 | 2.7x |
-| r11 | The same, cloud Linux, 4 Nov | 35,977 | 0, 0, 0, 0 | 237,943 | 17,927 | 26,392 | 25,017,321 | 1.9x |
-| w3 | Vulkan window, 50 s, no input | 3,007 | 0, 0, 0, 0 | 15,108 | 1,442 | | sound off | 1.0x, vsync |
-| w4 | Vulkan window, 95 s, presses | 5,705 | 0, 0, 0, 0 | 34,413 | 2,791 | | sound off | 1.0x, vsync |
+| w1 | Headless, no input | 35,977 | 0, 0, 0 | 228,345 | 17,927 | 26,023 | 21,975,158 | 2.4x |
+| r10 | The same, cloud Linux, 4 Nov | 35,977 | 0, 0, 0 | 228,345 | 17,927 | 26,023 | 21,975,158 | 1.7x |
+| w2 | Headless, presses | 35,977 | 0, 0, 0 | 237,943 | 17,927 | 26,392 | 25,017,321 | 2.7x |
+| r11 | The same, cloud Linux, 4 Nov | 35,977 | 0, 0, 0 | 237,943 | 17,927 | 26,392 | 25,017,321 | 1.9x |
+| w3 | Vulkan window, 50 s, no input | 3,007 | 0, 0, 0 | 15,108 | 1,442 | | sound off | 1.0x, vsync |
+| w4 | Vulkan window, 95 s, presses | 5,705 | 0, 0, 0 | 34,413 | 2,791 | | sound off | 1.0x, vsync |
 
 - The Vulkan window ran on the RTX 2080 Ti at 640x480, with nothing on stderr.
 - Viewed by Claude: w3's presented frame 2700 is the title screen, with logo and a 3D street. w4's frame
@@ -286,11 +291,10 @@ alongside. The reasons, from how other recompilation projects ordered their work
        after the block, so 750 of 57,308 timer reads come back one tick apart, changing 25 stored
        values and no store count.
 3. **Runtime and platforms (now).**
-   - Entry: phase 1's exit. The first SteamOS smoke test runs now, on the pin-move build, which goes
-     to both devices: a Windows build on the PC, and a Linux package with `copy-disc.sh` for the Ally X
-     (the maintainer, 6 Nov 01:28). It changes no code, and nothing has run on SteamOS yet. That Linux
-     build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to see that its
-     error dialog shows.
+   - Entry: phase 1's exit, met 8 November. The first SteamOS smoke test ran ahead of it, on
+     6 November ("Where it stands", "SteamOS runs it"), and changed no code. Whether that build's
+     Game Mode step passed (start `play.sh` before setup, to see that its error dialog shows) isn't
+     recorded here.
    - Work: pacing while unfocused (`known-bugs.md`, 10). SteamOS in Desktop Mode and Game Mode. Sound through a device, a controller, and a
      30-minute session.
    - Exit: bug 10 fixed with a test, and pacing measured on both devices, because it depends on the

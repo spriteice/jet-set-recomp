@@ -44,7 +44,8 @@ F1 opens the binding screen (a pad's select button does too), F10 shows the fram
 writes a screenshot, Esc quits. The memory card vmu-a1.bin is made, blank and formatted, on the
 first run. Each run writes its own log when the game closes, in logs/, named by the time the run
 started (logs/run-2026-11-05_09-45-16.txt, say), so no run's log is overwritten. A log holds counts
-only (frames, faults, calls the translator missed). Send back the logs from a test.
+only (frames, traps, unmapped memory accesses, calls the translator missed). Send back the logs from
+a test.
 
 Recording a play-through (Windows)
 ----------------------------------
