@@ -1,6 +1,6 @@
 # Status
 
-The project's durable notes: where the work stands and what's next. Keep this current. Updated 10
+The project's durable notes: where the work stands and what's next. Keep this current. Updated 14
 November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-04.md),
 [decisions.md](decisions.md).
 
@@ -79,12 +79,12 @@ November 2026. Reports and reasons: [test-boot-2026-11-04.md](test-boot-2026-11-
   log showed 12,747 frames over 212 s at 1.0x, 0 traps, 0 unmapped, and 256 untranslated call targets
   that ran interpreted (`known-bugs.md`, 11).
 - **Drawing has open bugs:** missing shadows, flickering character textures, rail depth, a wrong
-  texture on the Shibuya Terminal road, sparks that don't follow the skates, and pacing while
-  unfocused. `known-bugs.md` in the shared folder lists them. On the Ally X, the maintainer reports the
+  texture on the Shibuya Terminal road, and pacing while unfocused. `known-bugs.md` in the shared folder lists them. On the Ally X, the maintainer reports the
   Garage roof's wrong texture (8) gone, most likely with bug 41's fix (pin `71d5a66`), and the
   flickering character textures (5) and the road (7) still there (8 November). Phase 2's per-bug
-  check put 7 in the renderer with its cause, and 5 there too with its cause on 10 November; 9 isn't
-  placed yet (phase 2, below).
+  check put 7 in the renderer with its cause, and 5 there too with its cause on 10 November. The
+  sparks that stay behind on a grind (9) are the game's own behaviour, and the bug is closed (the
+  maintainer, 14 November).
   A maximised or fullscreen window drew the picture's edge out to the window's edge (43): fixed at pin
   `6154c9a`, and the maintainer saw it fixed on the Ally X and on Windows (9 November), with the test
   builds `2026-11-08-8661d09-pin-6154c9a-test-fullscreen-linux` and `-windows`, the first Windows
@@ -200,7 +200,15 @@ alongside. The reasons, from how other recompilation projects ordered their work
      nothing in this game reaches it) and 40 (the stale 5 November recording only) stay open outside the
      exit. The phase-exit upstream check (`docs/upstream.md`) found upstream's `main` still at
      `51ca276`, our base, so there was nothing to merge.
-2. **Tell translation faults from renderer faults (now).**
+2. **Tell translation faults from renderer faults (done 14 November).**
+   - Exited 14 November, on the maintainer's card "Close it, phase 3 next" (8:49am UTC+8), with
+     both exit lines met (the shared folder's `reviews/phase-2-exit-2026-11-14.md`). Bugs 5 and 7 are
+     the renderer's, with their causes; 9 is the game's own behaviour, closed by the maintainer; 8 is
+     gone on the Ally X since bug 41's fix. Every write-hash difference between recording 1's
+     translated and interpreted runs is explained, below, and none is a translation fault. Recording
+     2's difference wasn't examined store by store: its interpreted run plays the same game, and both
+     causes belong to the translated code and the interpreter, not to a recording. The phase-exit
+     upstream check found upstream's `main` still at `51ca276`, so there was nothing to merge.
    - Entry: phase 1's exit, and recorded runs that reach each drawing bug's spot: the Shibuya
      Terminal road, the Garage, a grind, and sparks. The first recording (the tutorial in the Garage,
      mission 1 in Shibuya-cho) likely reaches all four: confirm that at the start rather than record
@@ -259,17 +267,31 @@ alongside. The reasons, from how other recompilation projects ordered their work
        `phase2/per-bug-check/results/03-bug5-cause.txt`. The fix is phase 4's: per-pixel sorting of
        the translucent list. The same check's validation run found a sync hazard on the window's
        depth image that changes nothing on screen (`known-bugs.md`, 45).
-     - Bug 9 doesn't show in the sandbox: in every grind the sparks come from the skates, in both
-       runs alike. The Ally X replay ran the same grinds; what the maintainer saw there is still to
-       hear.
-3. **Runtime and platforms.**
+     - Bug 9 doesn't show in the sandbox as a fault: in every grind the newest sparks come from the
+       skates, in both runs alike. The maintainer closed it on 14 November as the game's own
+       behaviour.
+   - The write-hash difference, shown store by store (10 November, the maintainer's cards "Write log,
+     no code" and "Show frame 173 too, no code"; the shared folder's `phase2/hash-difference/`), with
+     `--write-log` and `--mask-segment`:
+     - Frames 1 and 2 differ only in bits 29 to 31 of 47 return addresses pushed to the stack
+       (`0x0c...` translated, `0x8c...` interpreted), a false difference dream-recomp documents and
+       masks with `--mask-segment`. Masked, the hashes are equal to frame 23.
+     - From frame 24, the first interrupt, the runs take the same interrupts a few stores apart,
+       because translated code checks for them at function entries and backward branches and the
+       interpreter after returns and backward branches. Every store outside the handlers is the same
+       there. Frame 173's extra interrupt in the translated run comes from the same cause: the
+       interpreter doesn't check at a function's entry, so it takes three pending causes in one
+       interrupt where the translated run takes two.
+     - The only other difference is when the timer is read: translated code adds a block's cycles
+       after the block, so 750 of 57,308 timer reads come back one tick apart, changing 25 stored
+       values and no store count.
+3. **Runtime and platforms (now).**
    - Entry: phase 1's exit. The first SteamOS smoke test runs now, on the pin-move build, which goes
      to both devices: a Windows build on the PC, and a Linux package with `copy-disc.sh` for the Ally X
      (the maintainer, 6 Nov 01:28). It changes no code, and nothing has run on SteamOS yet. That Linux
      build's `TESTING.md` has a step to start `play.sh` in Game Mode before setup, to see that its
      error dialog shows.
-   - Work: pacing while unfocused (`known-bugs.md`, 10), and the sparks (9) if phase 2 puts them in
-     game timing. SteamOS in Desktop Mode and Game Mode. Sound through a device, a controller, and a
+   - Work: pacing while unfocused (`known-bugs.md`, 10). SteamOS in Desktop Mode and Game Mode. Sound through a device, a controller, and a
      30-minute session.
    - Exit: bug 10 fixed with a test, and pacing measured on both devices, because it depends on the
      host (Zelda64Recomp was still fixing pacing fifteen months after its release); a recorded run
@@ -290,10 +312,9 @@ alongside. The reasons, from how other recompilation projects ordered their work
      in the shared folder's `depth-fix/`, to re-test on phase 1's function boundaries). Then modifier
      volumes (shadows, 1), because their stencil pass reads the depth that bug 6's fix changes; the
      game uses them in every 3D frame (39 opaque and 1 translucent in the last frame of w1). Then
-     texture formats and palettes (7, 8), the texture cache (5), and the sparks (9) if they're the
-     renderer's. The texture cache keys each texture by a hash of its data, not its address, so a
+     texture formats and palettes (7, 8), and per-pixel sorting of the translucent list (5). The texture cache keys each texture by a hash of its data, not its address, so a
      replacement pack can work across releases later (phase 5, "Other releases").
-   - Exit: bugs 1 and 5 to 9 fixed and passed on both devices, each with a pixel count on a capture
+   - Exit: bugs 1 and 5 to 8 fixed and passed on both devices, each with a pixel count on a capture
      (the method in `depth-fix/diagnosis.md`) and against its reference frame.
 5. **The whole game.**
    - Entry: phases 1 to 4.
