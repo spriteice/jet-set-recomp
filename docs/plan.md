@@ -96,9 +96,14 @@ Times are UTC unless marked UTC+8.
      81 MB of C++ in one unit and takes about 15 minutes, and every hook after it re-emits.
    - A study of the game, with no code: the screen's settings and who reads them, how the HUD and the
      menus are drawn, the game's own culling, and the draw test of each class below. It started
-     beside phase 3 on 14 November (card "New thread, study now", 09:03).
+     beside phase 3 on 14 November (card "New thread, study now", 09:03) and ended the same day: its
+     answers are the shared folder's `phase6/game-study-2026-11-14.md`, and the addresses it and the
+     camera study named are [games/jgr/symbols.md](../games/jgr/symbols.md). Recording 1 reaches no
+     police vehicles in play, so that class is studied from the first recording that does, phase 5's
+     at the latest (15:56).
    - Hooks: the mechanism the maintainer approved on 14 November (09:02), built after phase 3's exit,
-     with the plan's two additions, tuned values and frame notes, if they're approved.
+     with the plan's two additions, tuned values and frame notes, in its first build (13:52). The free
+     camera's hook, approved the same day (13:52), follows it.
    - Super-xBR upscaling for world textures, menus and the HUD, and graffiti, in the texture cache that
      phase 4 rebuilds.
    - Widescreen: the 3D view first, then the HUD and the menus, each screen kept 4:3 until it has been

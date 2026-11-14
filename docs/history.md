@@ -17,6 +17,58 @@ Newest first. One dated entry for each thing done or measured: what, its numbers
 evidence is. Everything below this section was `status.md`'s text on 14 November 2026, moved here
 unchanged.
 
+- **14 November 2026: phase 6's study of the game, and the camera study.** Two studies with no code,
+  each replaying recording 1 on a headless build in a cloud sandbox with the disc, at dream-recomp's
+  pin `6154c9a`: `jgr_boot --replay-input` of the recording, with `--rtc-seed 1`, a new card and a
+  stop. What they named is [games/jgr/symbols.md](../games/jgr/symbols.md): 65 rows of functions and
+  27 of data, and the camera and player objects' fields. Their reports and scripts are in the shared
+  folder, and what the maintainer decided on the way is in [decisions.md](decisions.md), 14 November,
+  08:41 to 15:56.
+  - The camera study (`reviews/camera-study-2026-11-14.md`, at `3dec93a`), for a free camera with the
+    feel of the maintainer's JSRF-PC project. The camera is one object, made new for each trial and
+    level; one function, the follow camera, leaves the eye final; the controls take their heading from
+    one word of that object; every L press recentres; the game's wall test answers one step late; and
+    the game never reads the second stick: pushed for 300 frames, it changed 4 bytes of the 16 MB of
+    memory, the pad's raw answer in two copies. In play the view angle is 75 degrees, near 1 and far
+    60,000. Its whole-recording run matched the baseline's `tutorial_mission1_kogane_replay` in every
+    count the report prints: 79,438 frames, 534,030 interrupts, 39,655 renders, 85,883 GD-ROM sectors,
+    0 traps, 0 unmapped accesses and 0 untranslated call targets. Its eight shorter runs, stopped at
+    frames 8,900 to 78,800, had 0 traps, 0 unmapped and 0 untranslated too. Section 12 of the hook
+    design (`reviews/hook-design-proposal-2026-11-14.md`), the free camera's own hook, is built on it.
+  - Phase 6's game study (`phase6/game-study-2026-11-14.md`, at `5c89491`), step 1 of the shared
+    folder's `phase6/PLAN.md`. Its nine whole-recording runs, A to I, each had 79,438 frames, 1,325.000
+    s of guest time, 0 traps, 0 unmapped and 0 untranslated. A matched the baseline's run in every
+    count the report prints, and the per-frame write hashes of five watch runs (B, C, E, F and G) were
+    A's frame for frame. D, which sampled the CPU, took 534,037 interrupts where A took 534,030, and
+    its hashes part from A's at frame 4,217. The shorter runs (captures at 27 spots, the knock-outs,
+    the widescreen pair at four spots and the pair with the game's tests opened at two) each had 0
+    traps, 0 unmapped and 0 untranslated. It used a copy of dream-recomp with three switches that
+    stayed in its sandbox (`phase6/study-aids/diag-switches.diff`): the read watch and the set-a-word
+    switch the maintainer allowed at 13:00, and a frame filter for the watches. It drew its captures
+    on Mesa's lavapipe, which the same card allowed.
+
+    What it found: in play the view angle is 75 degrees most of the time (31.4 to 121.9 in all), near
+    1 and far 60,000, and the far limit is 32,768 on the title, in the menus, the garage and every
+    cutscene; the game's one call to the scale setter never ran; the HUD and the other 2D are drawn by
+    three library routines from vertex arrays, and none reads the scale; the game culls by its own
+    three wedges, a cone and three circles, all sized for 4:3, and opening every one of them changed 0
+    and 39 pixels of a 16:9 picture at the two spots tried; cans, cars, buses, the crowd, police on
+    foot and a rival each have a draw test that hides a thing that exists, and none decides whether it
+    exists; one function, `graffiti_load`, loads the three graffiti textures; and the busiest play used
+    0.42 of a picture's time at the median and 0.61 at most, in the runtime's clock. Recording 1
+    reaches no police vehicles in play, so they wait for a later recording (15:56). What it didn't
+    check is its section 11's list.
+  - In the repo: `5c89491`, phase 6's order and the hook mechanism's approval
+    (`2026-11-14-phase6-order-docs`), and the commit that adds `games/jgr/symbols.md` with the rows
+    the studies owed `decisions.md` (`2026-11-14-phase6-study-commit`), each with its review pack in
+    the shared folder's `review-packs/`.
+
+  Neither study changed what the game runs, so no gate or 10-minute run was made for them. Nothing ran
+  on the maintainer's PC: the disc was copied from it to both sandboxes by folder access, under one
+  claim from 09:51 to 13:09, which stood idle from 10:02 to 13:00 while the camera thread's session
+  was stopped (`PC-HISTORY.md` on the PC says so). Everything made from the game stayed in those
+  sandboxes.
+
 - **14 November 2026: the rules review, and the checks it added.** A review of the rules and the
   workflow ranked 11 changes, and the maintainer chose the seven that change no rule. What landed,
   each on a card ([decisions.md](decisions.md), 14 November) and each with its review pack in the

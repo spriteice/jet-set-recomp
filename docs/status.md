@@ -14,6 +14,11 @@ numbers and where its evidence is, at the top of the log in `history.md`.
   14 November. What each of our commits there does: [upstream.md](upstream.md), "Divergence".
 - **Phase:** 3 of 6, runtime and platforms ([plan.md](plan.md)). Phase 1, mapping the code, exited
   on 8 November, and phase 2, telling translation faults from renderer faults, on 14 November.
+- **Beside phase 3:** phase 6's first step, its study of the game, ended on 14 November, and so did
+  the camera study for a free camera. Both wrote no code. The addresses they named are
+  [games/jgr/symbols.md](../games/jgr/symbols.md). The hook mechanism, with its tuned values and frame
+  notes, and the free camera's hook are approved, and wait for phase 3's exit
+  ([decisions.md](decisions.md)).
 - **Playable:** on Windows since 5 November, and on SteamOS on the Ally X, in Desktop Mode and Game
   Mode, since 6 November: music, saving, loading, the tutorial and the first level work.
 - **Numbers:** `data/baseline.json` holds what a run is compared with: four 10-minute runs and
