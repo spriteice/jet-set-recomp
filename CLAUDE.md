@@ -7,7 +7,8 @@ Read these before you work, in this order:
 2. `docs/status.md`: where the work stands today. It's the project's durable memory, so update it
    as the work changes. Then your phase in `docs/plan.md`. `docs/history.md` holds what was done and
    measured: look there for a number or a reason, and add to it. It isn't required reading.
-3. `known-bugs.md`, at the shared folder's root: every bug found so far. Check it before you diagnose.
+3. `known-bugs.md`, at the shared folder's root: every bug found so far, one line each. Check it before
+   you diagnose, and open only your own bug's file in `known-bugs/` beside it.
 4. `docs/project-rules.md` before you propose a change, a commit or a doc edit.
 5. `docs/build-and-test-reference.md` before you build, test or deliver anything.
 
