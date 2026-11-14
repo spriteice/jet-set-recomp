@@ -3,15 +3,20 @@
 
     python3 -m unittest discover -s tests
 """
+import contextlib
+import fcntl
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import pathlib
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -1601,6 +1606,914 @@ class ReviewPack(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("no commit message at", result.stderr)
         self.assertFalse(self.pack.exists())
+
+
+# Stands in for the program, build/games/jgr/jgr_boot. It records each call, makes the memory card it
+# is given and refuses one that is there, prints what the game itself would, and writes the report
+# and the write hash that state/behaviour.json gives for this call, or the ready ones. A call's
+# record appears whole or not at all, because the tests read the records while the program runs.
+STANDIN_PROGRAM = r"""#!PYTHON
+import json, os, pathlib, sys, time
+STATE = pathlib.Path("STATE_FOLDER")
+args = sys.argv[1:]
+given = lambda flag: args[args.index(flag) + 1] if flag in args else None
+report, write_hash, card = given("--report"), given("--write-hash"), given("--vmu")
+key = pathlib.Path(report).name.split(".")[0]
+written = STATE / "calls" / f"{key}.{os.getpid()}.written"
+written.write_text(json.dumps({"args": args, "cwd": os.getcwd(), "pid": os.getpid()}))
+attempt = 0
+while True:
+    try:
+        os.link(written, STATE / "calls" / f"{key}.{attempt}.json")
+        break
+    except FileExistsError:
+        attempt += 1
+written.unlink()
+plans = json.loads((STATE / "behaviour.json").read_text()).get(key, [{}])
+plan = plans[min(attempt, len(plans) - 1)]
+if card:
+    if os.path.exists(card):
+        print(f"{card} is not a memory card image", file=sys.stderr)
+        sys.exit(2)
+    pathlib.Path(card).write_bytes(b"a made-up card")
+print("serial output (19 bytes):\nTHE GAME'S OWN TEXT", flush=True)
+time.sleep(plan.get("sleep", 0))
+if "write" in plan:
+    pathlib.Path(plan["write"]).write_text("not a folder")
+if "exit" in plan:
+    print("fault: THE GAME'S OWN TEXT", file=sys.stderr)
+    sys.exit(plan["exit"])
+pathlib.Path(report).write_text(plan.get("report") or (STATE / "reports" / f"{key}.txt").read_text())
+pathlib.Path(write_hash).write_text(plan.get("hash") or f"{key} 1\n{key} 2\n")
+"""
+
+# Stands in for dream-recomp's tools/regress/gate.py, with its commands, its files in
+# .regress/LABEL/, its lines and its exit statuses, as that script has them at the pin 6154c9a.
+STANDIN_GATE = r"""#!/usr/bin/env python3
+import argparse, hashlib, pathlib, subprocess, sys
+REPO = pathlib.Path(__file__).resolve().parents[2]
+STORE = REPO / ".regress"
+SCENARIOS = {"attract": (40, []), "gameplay": (40, ["--press", "start@300,start@600,a@900"])}
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+
+
+def scenarios_of(label):
+    listed = STORE / label / "scenarios"
+    return {line.strip() for line in listed.read_text().splitlines() if line.strip()} if listed.exists() else set(SCENARIOS)
+
+
+def capture(a):
+    exe = REPO / a.build / "games" / a.game / f"{a.game}_boot"
+    if not exe.is_file():
+        print(f"no launcher {a.game}_boot in {exe.parent} that this host can start", file=sys.stderr)
+        return 2
+    out = STORE / a.label
+    out.mkdir(parents=True, exist_ok=True)
+    scenarios = dict(SCENARIOS)
+    for name, recording, seconds in a.replay:
+        card = out / f"{name}.card.bin"
+        card.unlink(missing_ok=True)
+        scenarios[name] = (int(seconds), ["--replay-input", str(pathlib.Path(recording).resolve()), "--vmu", str(card)])
+    (out / "scenarios").write_text("".join(f"{name}\n" for name in scenarios))
+    for name, (seconds, extra) in scenarios.items():
+        h, rep = out / f"{name}.hash", out / f"{name}.report"
+        try:
+            proc = subprocess.run([str(exe), "--config", str(REPO / a.config), "--no-audio", "--rtc-seed", "1",
+                                   "--max-seconds", str(seconds), *extra, "--write-hash", str(h), "--report", str(rep)],
+                                  capture_output=True, text=True, cwd=str(REPO))
+        except OSError as e:
+            print(f"  {a.label}/{name}: could not start {exe} -- {e}", file=sys.stderr)
+            return 2
+        if not h.exists() or h.stat().st_size == 0:
+            tail = (proc.stderr or proc.stdout or "").strip().split("\n")[-1:]
+            print(f"  {a.label}/{name}: NO OUTPUT -- {' '.join(tail)}", file=sys.stderr)
+            return 2
+        counters = "\n".join(line for line in rep.read_text().splitlines() if not line.startswith("host:"))
+        (out / f"{name}.counters").write_text(counters)
+        print(f"  {a.label:14} {name:9} frames={sum(1 for _ in h.open()):<6} writehash={digest(h)} "
+              f"counters={hashlib.sha256(counters.encode()).hexdigest()[:16]}")
+    return 0
+
+
+def compare(a):
+    bad = False
+    names = scenarios_of(a.before) | scenarios_of(a.after)
+    for name in [n for n in SCENARIOS if n in names] + sorted(n for n in names if n not in SCENARIOS):
+        pa, pb = STORE / a.before / f"{name}.hash", STORE / a.after / f"{name}.hash"
+        missing = [p for p in (pa, pb) if not p.exists()]
+        for p in missing:
+            print(f"  {name:9} MISSING {p.relative_to(REPO)} -- capture it before comparing", file=sys.stderr)
+        if missing:
+            bad = True
+            continue
+        ca, cb = pa.with_suffix(".counters"), pb.with_suffix(".counters")
+        same = ca.exists() and cb.exists() and ca.read_text() == cb.read_text()
+        if digest(pa) == digest(pb) and same:
+            print(f"  {name:9} identical")
+        else:
+            bad = True
+            print(f"  {name:9} CHANGED  writehash {digest(pa)} -> {digest(pb)}{'' if same else '   counters differ too'}")
+    if bad:
+        print("\n  A changed hash is a fact; whether it matters is a judgement. Understand it before continuing.",
+              file=sys.stderr)
+    return 1 if bad else 0
+
+
+ap = argparse.ArgumentParser()
+sub = ap.add_subparsers(dest="cmd", required=True)
+c = sub.add_parser("capture")
+c.add_argument("label")
+c.add_argument("--build", default="build")
+c.add_argument("--config", default="games/crazytaxi/crazytaxi.toml")
+c.add_argument("--game", default="crazytaxi")
+c.add_argument("--replay", nargs=3, action="append", default=[])
+d = sub.add_parser("compare")
+d.add_argument("before")
+d.add_argument("after")
+a = ap.parse_args()
+raise SystemExit(capture(a) if a.cmd == "capture" else compare(a))
+"""
+
+# Stands in for scripts/10_build_linux.sh: it prints what a build can print, fails or makes nothing
+# when the test says so, and otherwise puts the stand-in program where the build puts the real one.
+STANDIN_BUILD = """#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0-only
+set -eu
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+echo "GENERATED CODE fn_0c014070"
+if [ -e "$root/../build-fails" ]; then
+    echo "ninja: build stopped: subcommand failed." >&2
+    exit 1
+fi
+if [ -e "$root/../build-makes-nothing" ]; then
+    exit 0
+fi
+mkdir -p "$root/build/games/jgr"
+cp "$root/../jgr_boot" "$root/build/games/jgr/jgr_boot"
+echo "built $root/build/games/jgr/jgr_boot"
+"""
+
+
+class PinCheck(unittest.TestCase):
+    """31_pin_check.py in a made-up checkout: this repository's tracked files and its real baseline, one
+    commit, a made-up disc with a hash list that names it, and stand-ins for the build, the program
+    and dream-recomp's gate. The disc check, the disc image and the comparison are the real scripts."""
+    RUNS = CompareRuns.RUNS
+    REPLAY, SCENARIO = "tutorial_mission1_kogane_replay", "tutorial_mission1_kogane"
+    GAME_TEXT, BUILD_TEXT = "THE GAME'S OWN TEXT", "GENERATED CODE"
+
+    def setUp(self):
+        self.folder = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.folder)
+        self.repo, self.state, self.captures = self.folder / "repo", self.folder / "state", self.folder / "captures"
+        for entry in audit.tracked_files(ROOT):
+            rel = entry.path.relative_to(ROOT)
+            if rel.parts[0] != "tests" and entry.path.is_file():
+                (self.repo / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(entry.path, self.repo / rel)
+        for folder in (self.state / "calls", self.state / "reports", self.captures, self.folder / "tmp"):
+            folder.mkdir(parents=True)
+        (self.folder / "gitconfig").write_text("")
+        self.env = dict(os.environ, HOME=str(self.folder), GIT_CONFIG_GLOBAL=str(self.folder / "gitconfig"),
+                        GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.com", GIT_COMMITTER_NAME="t",
+                        GIT_COMMITTER_EMAIL="t@example.com", TMPDIR=str(self.folder / "tmp"))
+        for name in ("GIT_INDEX_FILE", "GIT_DIR", "GIT_WORK_TREE", "JGR_DISC_DIR", "DREAM_RECOMP_URL"):
+            self.env.pop(name, None)
+        # A made-up disc, a made-up boot file, and a hash list that names them, as in CopyDisc.
+        self.disc = self.folder / "disc/Jet Grind Radio (USA)"
+        self.disc.mkdir(parents=True)
+        (self.disc / "game.cue").write_text(CUE)
+        lines = ["# made up for the test", f"{hashlib.sha256(CUE.encode()).hexdigest()}  game.cue"]
+        for name, size in SIZES.items():
+            data = name.encode() * (size // len(name))
+            (self.disc / name).write_bytes(data)
+            lines.append(f"{hashlib.sha256(data).hexdigest()}  {name}")
+        self.boot = self.repo / "games/jgr/boot/1ST_READ.BIN"
+        self.boot.parent.mkdir()
+        self.boot.write_bytes(b"a made-up boot file")
+        lines.append(f"{hashlib.sha256(b'a made-up boot file').hexdigest()}  1ST_READ.BIN")
+        (self.repo / "data/inputs.sha256").write_text("\n".join(lines) + "\n")
+        self.gdi = self.repo / "games/jgr/disc.gdi"
+        self.make_gdi(self.disc)
+        # The stand-ins. The build's is a tracked file of the made-up checkout, as the real one is.
+        (self.repo / "scripts/10_build_linux.sh").write_text(STANDIN_BUILD)
+        program = self.folder / "jgr_boot"
+        program.write_text(STANDIN_PROGRAM.replace("PYTHON", sys.executable).replace("STATE_FOLDER", str(self.state)))
+        program.chmod(0o755)
+        self.behave()
+        for name, run in self.RUNS.items():
+            self.ready(name, run_report(run, speed=run["linux_sandbox_speed_x"]))
+        self.ready(self.SCENARIO, run_report(self.RUNS[self.REPLAY], speed=self.RUNS[self.REPLAY]["linux_sandbox_speed_x"]))
+        for name in ("attract", "gameplay"):
+            self.ready(name, run_report(dict(self.RUNS["no_input"], max_seconds=40, frames=2399)))
+        self.pin = self.make_dream()
+        (self.repo / "data/dream-recomp.pin").write_text(f"# made up for the test\n{self.pin}\n")
+        self.git("-c", "init.defaultBranch=main", "init", "-q")
+        self.git("add", "-A")
+        self.git("commit", "-q", "--no-gpg-sign", "-m", "The checkout")
+        self.commit = self.git("rev-parse", "HEAD").strip()
+        self.name = f"{self.commit[:7]}-{self.pin[:7]}"
+        self.logs = self.repo / "build/pin-check-logs"
+
+    def make_dream(self) -> str:
+        """A stand-in dream-recomp where the build fetches the real one: a repository of its own with
+        the gate's script, which ignores its captures as the real one does. Gives its commit."""
+        dream = self.repo / "third_party/dream-recomp"
+        (dream / "tools/regress").mkdir(parents=True)
+        (dream / "tools/regress/gate.py").write_text(STANDIN_GATE)
+        (dream / ".gitignore").write_text(".regress/\n")
+        for args in (["init", "-q"], ["add", "-A"], ["commit", "-q", "--no-gpg-sign", "-m", "A stand-in dream-recomp"]):
+            subprocess.run(["git", "-C", str(dream), *args], check=True, capture_output=True, env=self.env)
+        return subprocess.run(["git", "-C", str(dream), "rev-parse", "HEAD"], check=True, capture_output=True,
+                              text=True, env=self.env).stdout.strip()
+
+    def make_gdi(self, disc: pathlib.Path):
+        subprocess.run([sys.executable, str(self.repo / "scripts/02_make_gdi.py"), str(disc / "game.cue"), str(self.gdi)],
+                       check=True, capture_output=True)
+
+    def git(self, *args: str) -> str:
+        return subprocess.run(["git", "-C", str(self.repo), *args], capture_output=True, text=True, check=True,
+                              env=self.env).stdout
+
+    def ready(self, key: str, report: str):
+        """The report the stand-in program writes for a run, or for a scenario of the gate."""
+        (self.state / "reports" / f"{key}.txt").write_text(report)
+
+    def behave(self, **plans: list[dict]):
+        """What the stand-in program does on each call for a run or a scenario, the last one repeated:
+        `report` and `hash` to write, `exit` to end on without writing, `sleep` first, and `write`,
+        a file to leave somewhere else."""
+        (self.state / "behaviour.json").write_text(json.dumps(plans))
+
+    def calls(self, key: str | None = None) -> list[dict]:
+        """The stand-in program's calls for one run or scenario, in order, or all of them."""
+        files = sorted((self.state / "calls").glob(f"{key}.*.json" if key else "*.json"), key=lambda path: int(path.name.split(".")[-2]))
+        return [json.loads(path.read_text()) for path in files]
+
+    def check(self, *args: str, disc: pathlib.Path | None = None, **env: str) -> subprocess.CompletedProcess:
+        command = [sys.executable, str(self.repo / "scripts/31_pin_check.py"), str(self.captures)]
+        if "JGR_DISC_DIR" not in env:
+            command += ["--disc", str(disc or self.disc)]
+        return subprocess.run([*command, *args], capture_output=True, text=True, env=dict(self.env, **env))
+
+    def files(self, folder: pathlib.Path) -> list[str]:
+        return sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*") if path.is_file())
+
+    def eventually(self, holds, otherwise: str):
+        """Waits for what follows a kill by a moment: a process that was killed takes one to go, and
+        gives up what it held as it goes. Fails after 10 seconds."""
+        for _ in range(200):
+            if holds():
+                return
+            time.sleep(0.05)
+        self.fail(otherwise)
+
+    def assert_nothing_ran(self, result: subprocess.CompletedProcess, why: str):
+        """It stopped at its inputs: exit 2 with the reason on one line, and nothing built, run or kept."""
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn(why, result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.repo / "build-linux.log").exists(), "it built")
+        self.assertEqual(list(self.captures.iterdir()), [])
+        self.assertEqual(list((self.folder / "tmp").iterdir()), [])
+
+    def test_a_build_that_matches_is_measured_once_and_its_capture_folder_written(self):
+        result = self.check()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        dest = self.captures / self.name
+        said = result.stdout.splitlines()
+        # With nothing to compare the gate with, the result's first words say so.
+        self.assertEqual(said[-1], "RUNS MATCH, GATE NOT COMPARED: every run matches the baseline, and the gate was "
+                                   "captured and compared with nothing (no --before)")
+        self.assertIn("runs: MATCH: 5 of 5 runs, every count equal to data/baseline.json, every compared speed within 15% of it", said)
+        self.assertIn("gate: captured, 10 files, and compared with nothing (no --before)", said)
+        self.assertIn(f"kept: {dest}, 21 files, each read back and checked against its SHA-256", said)
+        gate = [f"gate/{name}" for name in ("scenarios", *(f"{scenario}.{kind}" for scenario in ("attract", "gameplay", self.SCENARIO)
+                                                           for kind in ("hash", "report", "counters")))]
+        runs = [f"runs/{name}.{kind}" for name in self.RUNS if name != self.REPLAY for kind in ("hash", "report.txt")]
+        self.assertEqual(self.files(dest), sorted(["MANIFEST.txt", "evidence/gate.txt", "evidence/ten-minute-runs.txt", *gate, *runs]))
+
+        # Each run is made as the build reference gives it, from the repository's root.
+        config = ["--config", str(self.repo / "games/jgr/jgr.toml"), "--rtc-seed", "1", "--max-seconds", "600"]
+        (call,) = self.calls("no_input")
+        self.assertEqual(call["args"][:6], config)
+        self.assertEqual(call["args"][6::2], ["--report", "--write-hash"])
+        self.assertEqual(call["cwd"], str(self.repo))
+        (call,) = self.calls("presses_vmu")
+        self.assertEqual(call["args"][:9], [*config, "--press", self.RUNS["presses_vmu"]["press"], "--vmu"])
+        self.assertEqual(call["args"][10::2], ["--report", "--write-hash"])
+        # The recorded play-through is the gate's scenario, made once, on a new card.
+        self.assertEqual(self.calls(self.REPLAY), [])
+        (call,) = self.calls(self.SCENARIO)
+        recording = str(self.repo / self.RUNS[self.REPLAY]["replay_input"])
+        self.assertEqual(call["args"][:9], ["--config", str(self.repo / "games/jgr/jgr.toml"), "--no-audio", "--rtc-seed", "1",
+                                            "--max-seconds", "1325", "--replay-input", recording])
+        self.assertEqual(len(self.calls()), 7)
+
+        # The manifest: what the build reference lists, and a digest of every file beside it.
+        manifest = (dest / "MANIFEST.txt").read_text()
+        cpus = len(os.sched_getaffinity(0))
+        script = hashlib.sha256((self.repo / "scripts/31_pin_check.py").read_bytes()).hexdigest()
+        for line in (f"commit: {self.commit[:7]} ({self.commit}), and this checkout has no origin/main",
+                     "working tree: as the commit has it",
+                     f"pin: {self.pin} (data/dream-recomp.pin, as the working tree has it)",
+                     f", {cpus} CPUs, {max(1, cpus // 2)} at a time",
+                     "disc: checked by scripts/00_verify_inputs.sh against data/inputs.sha256, the boot file "
+                     "games/jgr/boot/1ST_READ.BIN with it; games/jgr/disc.gdi is the image scripts/02_make_gdi.py writes for it",
+                     f"{script}  scripts/31_pin_check.py",
+                     "  bash scripts/00_verify_inputs.sh $DISC $PWD/games/jgr/boot/1ST_READ.BIN",
+                     "  bash scripts/10_build_linux.sh > build-linux.log 2>&1",
+                     f"  python3 third_party/dream-recomp/tools/regress/gate.py capture pin-check-{self.name} --build $PWD/build "
+                     f"--config $PWD/games/jgr/jgr.toml --game jgr --replay {self.SCENARIO} "
+                     "$PWD/data/recordings/2026-11-08-tutorial-mission1-kogane.txt 1325",
+                     "  build/games/jgr/jgr_boot --config $PWD/games/jgr/jgr.toml --rtc-seed 1 --max-seconds 600 "
+                     "--vmu $CARDS/no_input_vmu-1.card --report $OUT/runs/no_input_vmu.report.txt --write-hash $OUT/runs/no_input_vmu.hash",
+                     f"  python3 scripts/30_compare_runs.py --all --dir $OUT/runs {self.REPLAY}=$OUT/gate/{self.SCENARIO}.report",
+                     f"result: {said[-1]}"):
+            self.assertIn(line, manifest)
+        for heading in ("clang: ", "date: ", "platform: Linux ", "build: scripts/10_build_linux.sh, "):
+            self.assertIn("\n" + heading, manifest)
+        self.assertEqual(manifest.count("  scripts/"), len(list((self.repo / "scripts").iterdir())))
+        listed = dict(reversed(line.split("  ./")) for line in manifest.split("files here:\n")[1].splitlines())
+        self.assertEqual(sorted(listed), [name for name in self.files(dest) if name != "MANIFEST.txt"])
+        for name, digest in listed.items():
+            self.assertEqual(hashlib.sha256((dest / name).read_bytes()).hexdigest(), digest, name)
+
+        # The evidence quotes the gate's own lines and the comparison's table.
+        evidence = (dest / "evidence/gate.txt").read_text()
+        for scenario in ("attract", "gameplay", self.SCENARIO):
+            self.assertRegex(evidence, rf"(?m)^  pin-check-{self.name}\s+{scenario}\s+frames=2 +writehash=[0-9a-f]{{16}} counters=[0-9a-f]{{16}}$")
+        self.assertIn("Not compared: no --before was given.", evidence)
+        evidence = (dest / "evidence/ten-minute-runs.txt").read_text()
+        self.assertIn("| Frames | 35977 | 35977 | 35977 | 35977 | 79438 |", evidence)
+        self.assertIn(f"== {self.REPLAY}\nMade by the gate's capture as its scenario {self.SCENARIO} (evidence/gate.txt)", evidence)
+        self.assertIn("Its speed was measured ", evidence)
+
+        # What the program and the build printed is in the sandbox and nowhere else, and so are the
+        # cards: the gate's is in its own store, and the runs' are deleted with their folder.
+        self.assertIn(self.GAME_TEXT, (self.logs / self.name / "no_input-1.txt").read_text())
+        self.assertIn(self.BUILD_TEXT, (self.repo / "build-linux.log").read_text())
+        for text in (result.stdout, result.stderr, *((dest / name).read_text() for name in self.files(dest))):
+            self.assertNotIn(self.GAME_TEXT, text)
+            self.assertNotIn(self.BUILD_TEXT, text)
+        self.assertTrue((self.repo / f"third_party/dream-recomp/.regress/pin-check-{self.name}/{self.SCENARIO}.card.bin").is_file())
+        self.assertEqual(list((self.folder / "tmp").iterdir()), [])
+
+        # The same build again, held against the first capture: unchanged, under a name of its own.
+        # By then origin/main is another commit, which the manifest says.
+        other = self.git("commit-tree", "HEAD^{tree}", "-m", "Another commit").strip()
+        self.git("update-ref", "refs/remotes/origin/main", other)
+        result = self.check("--before", str(dest / "gate"), "--label", "again")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.splitlines()[-1], "UNCHANGED: every run matches the baseline, and the gate is identical to --before")
+        self.assertIn(f"commit: {self.commit[:7]} ({self.commit}), which is not origin/main ({other[:7]})\n",
+                      (self.captures / f"{self.name}-again/MANIFEST.txt").read_text())
+        evidence = (self.captures / f"{self.name}-again/evidence/gate.txt").read_text()
+        for scenario in ("attract", "gameplay", self.SCENARIO):
+            self.assertRegex(evidence, rf"(?m)^  {scenario}\s+identical$")
+        self.assertIn(f"Its manifest, {dest / 'MANIFEST.txt'}, says:\n  commit: {self.commit[:7]}", evidence)
+        self.assertIn(f"Result: identical to --before {dest / 'gate'}", evidence)
+
+    def test_a_disc_that_wasnt_checked_stops_it_before_anything_is_built(self):
+        # The same disc in another folder: it passes the hash list, and it isn't the one the image reads.
+        other = self.folder / "other/Jet Grind Radio (USA)"
+        shutil.copytree(self.disc, other)
+        self.assert_nothing_ran(self.check(disc=other), "games/jgr/disc.gdi isn't the disc image scripts/02_make_gdi.py writes "
+                                                         f"for the disc in {other}, so the program would read a disc that wasn't checked")
+        # An image whose numbers aren't the checked disc's.
+        self.gdi.write_text(self.gdi.read_text().replace(" 45000 ", " 45001 "))
+        self.assert_nothing_ran(self.check(), "isn't the disc image scripts/02_make_gdi.py writes")
+        self.make_gdi(self.disc)
+        # A different release: one track's bytes, then the boot file's.
+        track = (self.disc / "t2.bin").read_bytes()
+        (self.disc / "t2.bin").write_bytes(b"x" * len(track))
+        result = self.check()
+        self.assert_nothing_ran(result, "the disc didn't pass scripts/00_verify_inputs.sh, so nothing was built or run")
+        self.assertIn("MISMATCH  t2.bin", result.stderr)
+        (self.disc / "t2.bin").write_bytes(track)
+        self.boot.write_bytes(b"another release's boot file")
+        self.assertIn("MISMATCH  1ST_READ.BIN", self.check().stderr)
+        self.boot.write_bytes(b"a made-up boot file")
+        # The boot file that is checked is the one the config names, wherever that is.
+        config = self.repo / "games/jgr/jgr.toml"
+        config.write_text(config.read_text().replace('path = "boot/1ST_READ.BIN"', 'path = "elsewhere/1ST_READ.BIN"'))
+        (config.parent / "elsewhere").mkdir()
+        (config.parent / "elsewhere/1ST_READ.BIN").write_bytes(b"another release's boot file")
+        self.assertIn("MISMATCH  1ST_READ.BIN", self.check().stderr)
+        self.git("checkout", "--", "games/jgr/jgr.toml")
+        # A hash list that names no .cue: there is nothing to make the image from, or to hold it to.
+        inputs = self.repo / "data/inputs.sha256"
+        listed = inputs.read_text()
+        inputs.write_text("".join(line + "\n" for line in listed.splitlines() if "game.cue" not in line))
+        self.assert_nothing_ran(self.check(), "data/inputs.sha256 names 0 .cue files, and the disc image is made from one")
+        inputs.write_text(listed)
+        # Neither file made yet, which the hash list's check alone would pass over.
+        self.boot.unlink()
+        self.assert_nothing_ran(self.check(), "there is no boot file at games/jgr/boot/1ST_READ.BIN, where games/jgr/jgr.toml names it")
+        self.boot.write_bytes(b"a made-up boot file")
+        self.gdi.unlink()
+        self.assert_nothing_ran(self.check(), "there is no disc image at games/jgr/disc.gdi, where games/jgr/jgr.toml names it")
+
+    def test_a_count_that_differs_is_found_and_the_folder_is_kept_all_the_same(self):
+        self.git("update-ref", "refs/remotes/origin/main", self.commit)
+        self.behave(presses=[{"report": run_report(self.RUNS["presses"], frames=35978)}])
+        result = self.check(JGR_DISC_DIR=str(self.disc), DREAM_RECOMP_URL="https://someone:a-password@example.com/dream-recomp")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        said = result.stdout.splitlines()
+        self.assertIn("the runs don't match the baseline (scripts/30_compare_runs.py exit 1):", said)
+        self.assertIn("  presses: frames 35978, baseline 35977", said)
+        self.assertEqual(said[-1], "NOT UNCHANGED: 1 finding(s)")
+        dest = self.captures / self.name
+        self.assertIn("runs/presses.report.txt", self.files(dest))
+        self.assertNotIn("IN-PROGRESS.txt", self.files(dest))
+        manifest = (dest / "MANIFEST.txt").read_text()
+        self.assertIn("result: NOT UNCHANGED: 1 finding(s)\nthe runs don't match the baseline (scripts/30_compare_runs.py exit 1):\n"
+                      "  presses: frames 35978, baseline 35977\n", manifest)
+        self.assertIn("| Frames | 35977 | 35978 (baseline 35977) | 35977 | 35977 | 79438 |", (dest / "evidence/ten-minute-runs.txt").read_text())
+        # Where the commit and the pin's code came from is in the manifest, and no password with it.
+        self.assertIn(f"commit: {self.commit[:7]} ({self.commit}), which is origin/main\n", manifest)
+        self.assertIn(f"pin: {self.pin} (data/dream-recomp.pin, as the working tree has it), fetched from "
+                      "DREAM_RECOMP_URL=https://example.com/dream-recomp\n", manifest)
+        self.assertNotIn("a-password", manifest + result.stdout + result.stderr)
+
+    def test_a_gate_that_changed_is_found(self):
+        self.assertEqual(self.check().returncode, 0)
+        before = self.captures / self.name / "gate"
+        self.behave(gameplay=[{"hash": "another write\n"}])
+        # What a check of this name left in the gate's store, cut short, is no part of this one.
+        store = self.repo / "third_party/dream-recomp/.regress"
+        for label, name in ((f"pin-check-{self.name}-after", "left.hash"), (f"pin-check-{self.name}-after-before", "gameplay.hash")):
+            (store / label).mkdir()
+            (store / label / name).write_text("left behind\n")
+        result = self.check("--before", str(before), "--label", "after")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        said = result.stdout.splitlines()
+        self.assertIn(f"gate: DIFFERENT from --before {before}", said)
+        self.assertIn(f"the gate is not identical to --before {before} (compare exit 1):", said)
+        self.assertRegex(result.stdout, r"(?m)^  gameplay +CHANGED  writehash [0-9a-f]{16} -> [0-9a-f]{16}$")
+        self.assertRegex(result.stdout, r"(?m)^  attract +identical$")
+        self.assertEqual(said[-1], "NOT UNCHANGED: 1 finding(s)")
+        self.assertIn("MATCH: 5 of 5 runs", result.stdout)  # the runs are compared all the same
+        self.assertNotIn("gate/left.hash", self.files(self.captures / f"{self.name}-after"))
+        # A capture that lacks a scenario is never a match: an older one, made without the recording.
+        self.behave()
+        older = self.folder / "older"
+        shutil.copytree(before, older)
+        for path in older.glob(f"{self.SCENARIO}.*"):
+            path.unlink()
+        (older / "scenarios").write_text("attract\ngameplay\n")
+        result = self.check("--before", str(older), "--label", "older")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertRegex(result.stdout, rf"(?m)^  {self.SCENARIO} +MISSING \S+ -- capture it before comparing$")
+        self.assertIn("It has no MANIFEST.txt, in its folder or beside it, to say what it was made from.",
+                      (self.captures / f"{self.name}-older/evidence/gate.txt").read_text())
+
+    def test_a_run_that_was_slow_while_it_shared_the_machine_is_made_again_alone(self):
+        slow, usual = run_report(self.RUNS["no_input"], speed=1.0), run_report(self.RUNS["no_input"], speed=1.6)
+        replay = self.RUNS[self.REPLAY]
+        self.ready(self.REPLAY, run_report(replay, speed=1.7))
+        self.behave(**{"no_input": [{"report": slow}, {"report": usual}],
+                       self.SCENARIO: [{"report": run_report(replay, speed=1.0), "hash": "the same writes\n"}],
+                       self.REPLAY: [{"hash": "the same writes\n"}]})
+        result = self.check("--jobs", "2")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("MATCH: 5 of 5 runs", result.stdout)
+        dest = self.captures / self.name
+        self.assertEqual(len(self.calls("no_input")), 2)
+        self.assertEqual((dest / "runs/no_input.shared.report.txt").read_text(), slow)
+        self.assertEqual((dest / "runs/no_input.report.txt").read_text(), usual)
+        self.assertTrue((dest / "runs/no_input.shared.hash").is_file())
+        self.assertEqual(len(self.calls("presses")), 1)  # within its margin: made once
+        # The recorded play-through was the gate's, so alone it is made as the baseline's own run.
+        (call,) = self.calls(self.REPLAY)
+        self.assertEqual(call["args"][:8], ["--config", str(self.repo / "games/jgr/jgr.toml"), "--rtc-seed", "1", "--max-seconds",
+                                            "1325", "--replay-input", str(self.repo / replay["replay_input"])])
+        self.assertEqual(call["args"][8], "--vmu")
+        evidence = (dest / "evidence/ten-minute-runs.txt").read_text()
+        cpus = len(os.sched_getaffinity(0))
+        self.assertIn(f"Its speed was measured while it shared the machine: the gate's capture and the 4 runs went 2 at a time on {cpus} CPUs.", evidence)
+        self.assertIn("The first report and write hash are kept, runs/no_input.shared.report.txt and runs/no_input.shared.hash. "
+                      "The two write hashes are identical.", evidence)
+        self.assertIn(f"The first report and write hash are kept, gate/{self.SCENARIO}.report and gate/{self.SCENARIO}.hash. "
+                      "The two write hashes are identical.", evidence)
+        self.assertIn("| Speed | 1.6x (baseline 1.6x) |", evidence)
+        self.assertIn("python3 scripts/30_compare_runs.py --all --dir $OUT/runs\n", evidence)
+
+        # A run made twice on one build repeats write for write. Two hashes that differ are a finding.
+        self.behave(**{self.SCENARIO: [{"report": run_report(replay, speed=1.0), "hash": "the same writes\n"}],
+                       self.REPLAY: [{"hash": "other writes\n"}]})
+        result = self.check("--jobs", "2", "--label", "twice")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn(f"{self.REPLAY}: made twice on the same build, it wrote two different write hashes "
+                      f"(gate/{self.SCENARIO}.hash and runs/{self.REPLAY}.hash), where a run with --rtc-seed 1 repeats", result.stdout)
+
+        # Alone from the start, a slow run is a finding as it stands, and isn't made again.
+        made = len(self.calls("no_input"))
+        self.behave(no_input=[{"report": slow}])
+        result = self.check("--jobs", "1", "--label", "alone")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("  no_input: speed 1.0x is 37.5% under the baseline's 1.6x, more than the 15% margin", result.stdout)
+        self.assertEqual(len(self.calls("no_input")), made + 1)
+        self.assertIn("Its speed was measured with nothing else of this check running (--jobs 1).",
+                      (self.captures / f"{self.name}-alone/evidence/ten-minute-runs.txt").read_text())
+
+    def test_a_capture_folder_that_is_there_is_never_written_over(self):
+        self.assertEqual(self.check().returncode, 0)
+        dest, made = self.captures / self.name, len(self.calls())
+        kept = {name: (dest / name).read_bytes() for name in self.files(dest)}
+        (self.repo / "build-linux.log").unlink()
+        result = self.check()
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn(f"{dest} is there already, and a capture folder is never written over. Give this check a name "
+                      "of its own with --label NAME.", result.stderr)
+        self.assertEqual({name: (dest / name).read_bytes() for name in self.files(dest)}, kept)
+        self.assertEqual(len(self.calls()), made)
+        self.assertFalse((self.repo / "build-linux.log").exists())
+        # A folder a check was cut short in says so, and is left as it is too.
+        (self.captures / f"{self.name}-second").mkdir()
+        (self.captures / f"{self.name}-second/IN-PROGRESS.txt").write_text("A pin check started here.\n")
+        result = self.check("--label", "second")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("Its IN-PROGRESS.txt says a check is running there, or was cut short.", result.stderr)
+        self.assertEqual(self.files(self.captures / f"{self.name}-second"), ["IN-PROGRESS.txt"])
+        result = self.check("--label", "third")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(self.files(self.captures / f"{self.name}-third"), sorted(kept))
+        result = self.check("--label", "../elsewhere")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("--label ../elsewhere: it names a folder", result.stderr)
+
+    def test_without_a_build_of_the_pin_nothing_runs_and_the_folder_says_why(self):
+        (self.folder / "build-fails").write_text("")
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        said = result.stdout.splitlines()
+        self.assertIn("there is no build of this pin to check: scripts/10_build_linux.sh: exit 1. The build's output is in "
+                      "the sandbox's build-linux.log. Nothing was run.", said)
+        self.assertEqual(said[-5:-3], ["gate: not captured", "runs: not made"])
+        self.assertEqual(said[-1], "NOT UNCHANGED: 1 finding(s)")
+        self.assertEqual(self.calls(), [])
+        dest = self.captures / self.name
+        self.assertEqual(self.files(dest), ["MANIFEST.txt"])
+        self.assertIn("\nthere is no build of this pin to check: ", (dest / "MANIFEST.txt").read_text())
+        self.assertNotIn(self.BUILD_TEXT, (dest / "MANIFEST.txt").read_text() + result.stdout + result.stderr)
+        self.assertIn("ninja: build stopped", (self.repo / "build-linux.log").read_text())
+        (self.folder / "build-fails").unlink()
+        # A build that ends well and leaves no program is no build either.
+        (self.folder / "build-makes-nothing").write_text("")
+        result = self.check("--label", "nothing")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("there is no build of this pin to check: there is no program at build/games/jgr/jgr_boot. ", result.stdout)
+        (self.folder / "build-makes-nothing").unlink()
+
+        # A build that ends well beside a dream-recomp that isn't the pin's: local changes, then
+        # another commit. The program there can't be called this pin's, so it isn't run.
+        dream = self.repo / "third_party/dream-recomp"
+        (dream / "tools/regress/note.txt").write_text("a change that isn't committed\n")
+        result = self.check("--label", "changed")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("third_party/dream-recomp has local changes, so what was built isn't the pin's code", result.stdout)
+        (dream / "tools/regress/note.txt").unlink()
+        gate = (dream / "tools/regress/gate.py").read_text()
+        (dream / "tools/regress/gate.py").unlink()
+        result = self.check("--label", "no-gate")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("there is no third_party/dream-recomp/tools/regress/gate.py; ", result.stdout)
+        (dream / "tools/regress/gate.py").write_text(gate)
+        moved = "0123456789abcdef0123456789abcdef01234567"
+        (self.repo / "data/dream-recomp.pin").write_text(f"# moved, and not committed\n{moved}\n")
+        (self.repo / "docs/a note.md").write_text("not tracked\n")
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn(f"third_party/dream-recomp is at {self.pin}, not at the pin {moved}", result.stdout)
+        self.assertEqual(self.calls(), [])
+        # A pin that was moved and not committed: the folder is named by it, and the manifest says
+        # what the working tree held that the commit doesn't, by its SHA-256.
+        manifest = (self.captures / f"{self.commit[:7]}-{moved[:7]}/MANIFEST.txt").read_text()
+        pin_file = hashlib.sha256((self.repo / "data/dream-recomp.pin").read_bytes()).hexdigest()
+        note = hashlib.sha256(b"not tracked\n").hexdigest()
+        self.assertIn("working tree: differs from the commit in 2 file(s), each with the SHA-256 of what was built from\n"
+                      f"   M data/dream-recomp.pin  SHA-256 {pin_file}\n  ?? docs/a note.md  SHA-256 {note}\n"
+                      f"pin: {moved} (data/dream-recomp.pin, as the working tree has it)\n", manifest)
+
+    def test_a_run_that_doesnt_end_as_a_run_does_is_found(self):
+        self.behave(presses_vmu=[{"exit": 1}])
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        log = f"build/pin-check-logs/{self.name}/presses_vmu-1.txt"
+        self.assertIn("presses_vmu: the program didn't end as a run that reached its time limit does (exit 1). What it "
+                      f"printed is in the sandbox's {log}", result.stdout)
+        self.assertIn("  presses_vmu: no report was given, and --all needs every run of the baseline", result.stdout)
+        self.assertEqual(result.stdout.splitlines()[-1], "NOT UNCHANGED: 2 finding(s)")
+        self.assertIn(f"fault: {self.GAME_TEXT}", (self.repo / log).read_text())
+        dest = self.captures / self.name
+        self.assertIn("| Result | equal | equal | equal | equal |", (dest / "evidence/ten-minute-runs.txt").read_text())
+
+        # A scenario of the gate that writes no hash: the gate prints the program's last line, and
+        # that line stays in the sandbox. The gate's other scenarios aren't made, the play-through
+        # among them, so that run has no report, and the four other runs are compared all the same.
+        self.behave(gameplay=[{"exit": 1}])
+        result = self.check("--label", "gate")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        log = f"build/pin-check-logs/{self.name}-gate/gate-capture.txt"
+        self.assertIn(f"the gate's capture failed (exit 2, 4 file(s) captured), so the gate says nothing about this build. "
+                      f"What it printed is in the sandbox's {log}", result.stdout)
+        self.assertIn(f"  {self.REPLAY}: no report was given, and --all needs every run of the baseline", result.stdout)
+        self.assertIn(f"NO OUTPUT -- fault: {self.GAME_TEXT}", (self.repo / log).read_text())
+        dest = self.captures / f"{self.name}-gate"
+        evidence = (dest / "evidence/gate.txt").read_text()
+        self.assertRegex(evidence, rf"(?m)^  pin-check-{self.name}-gate +attract +frames=2 ")
+        self.assertIn(f"(1 other line(s) it printed are in the sandbox's {log}: they can hold a line the program printed, "
+                      "which stays in the sandbox)", evidence)
+        for text in (result.stdout, result.stderr, *((dest / name).read_text() for name in self.files(dest))):
+            self.assertNotIn(self.GAME_TEXT, text)
+        self.assertIn("| Result | equal | equal | equal | equal |", (dest / "evidence/ten-minute-runs.txt").read_text())
+
+        # A program this machine can't start is said too, for each run and by the gate.
+        self.behave()
+        (self.folder / "jgr_boot").write_text("#!/no/such/interpreter\n")
+        result = self.check("--label", "no-program")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn("no_input: the program didn't end as a run that reached its time limit does (could not be started "
+                      "(No such file or directory)).", result.stdout)
+        self.assertIn("the gate's capture failed (exit 2, 1 file(s) captured)", result.stdout)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_a_file_of_the_checkout_that_changes_while_it_runs_is_found(self):
+        # A file that isn't committed, as a moved pin isn't. While the runs go, something writes it again.
+        note = self.repo / "docs/a note.md"
+        note.write_text("as it was when the build was made\n")
+        self.behave(no_input=[{"write": str(note)}])
+        result = self.check()
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        said = result.stdout.splitlines()
+        start = "?? docs/a note.md  SHA-256 " + hashlib.sha256(b"as it was when the build was made\n").hexdigest()
+        end = "?? docs/a note.md  SHA-256 " + hashlib.sha256(b"not a folder").hexdigest()
+        at = said.index("the working tree changed while the check ran, so what was built, run and compared isn't one tree. "
+                        "The manifest lists it as it was at the start. What differs:")
+        self.assertEqual(said[at + 1:], [f"  at the start: {start}", f"  at the end: {end}", "NOT UNCHANGED: 1 finding(s)"])
+        self.assertIn("MATCH: 5 of 5 runs", result.stdout)  # what was measured is kept and compared all the same
+        manifest = (self.captures / self.name / "MANIFEST.txt").read_text()
+        self.assertIn(f"working tree: differs from the commit in 1 file(s), each with the SHA-256 of what was built from\n  {start}\npin: ", manifest)
+        self.assertIn("result: NOT UNCHANGED: 1 finding(s)\nthe working tree changed while the check ran", manifest)
+        # A working tree git can no longer read once the runs have ended is said the same way.
+        self.behave(no_input=[{"write": str(self.repo / ".git/index")}])
+        result = self.check("--label", "unread")
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertEqual(result.stdout.splitlines()[-2:], ["  at the end: git status failed, so what it holds isn't known",
+                                                           "NOT UNCHANGED: 1 finding(s)"])
+
+    def test_a_capture_folder_that_cant_be_written_whole_keeps_its_marker_and_loses_no_measurement(self):
+        # While the runs go, a file appears where the capture folder's gate/ belongs.
+        dest = self.captures / self.name
+        self.behave(no_input=[{"write": str(dest / "gate")}])
+        result = self.check()
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("31_pin_check.py: stopped, because a file or a folder couldn't be read or written: ", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertNotIn("UNCHANGED", result.stdout + result.stderr)
+        self.assertNotIn("RUNS MATCH", result.stdout + result.stderr)
+        self.assertRegex((dest / "IN-PROGRESS.txt").read_text(), r"It was cut short at \d\d:\d\d UTC\.\n\Z")
+        # The build and the runs aren't made again for that: what they gave is named, and still there.
+        (scratch,) = (self.folder / "tmp").iterdir()
+        self.assertIn(f"31_pin_check.py: what was measured is still in {scratch / 'out'}, in this sandbox", result.stderr)
+        self.assertIn("result: RUNS MATCH, GATE NOT COMPARED", (scratch / "out/MANIFEST.txt").read_text())
+        self.assertTrue((scratch / "out/runs/presses_vmu.report.txt").is_file())
+        self.assertFalse((scratch / "cards").exists())  # and the memory cards are gone all the same
+
+        # A copy that doesn't read back as it was written is a finding, and the marker stays.
+        pin_check = load("31_pin_check")
+        out, kept = self.folder / "out", self.folder / "kept"
+        (out / "runs").mkdir(parents=True)
+        (out / "runs/no_input.hash").write_text("a write hash\n")
+        kept.mkdir()
+        (kept / "IN-PROGRESS.txt").write_text("A pin check started here.\n")
+        plan = pin_check.Plan("c" * 40, "d" * 40, "ccccccc-ddddddd", kept, self.disc, self.gdi, self.boot, None, 1, 1, {}, [])
+        check = pin_check.Check(plan, out, self.folder / "cards", ())
+        check.measured = True
+
+        def a_copy_that_loses_bytes(source, target):
+            pathlib.Path(target).write_bytes(pathlib.Path(source).read_bytes()[:-1] if "hash" in str(source) else pathlib.Path(source).read_bytes())
+
+        copyfile, pin_check.shutil.copyfile = pin_check.shutil.copyfile, a_copy_that_loses_bytes
+        self.addCleanup(setattr, pin_check.shutil, "copyfile", copyfile)
+        said = check.keep_capture()
+        self.assertEqual(said, f"{kept}, with its IN-PROGRESS.txt: 1 of its 2 files didn't read back as written")
+        self.assertEqual(check.findings, [f"1 file(s) of {kept} don't have the SHA-256 they were written with: runs/no_input.hash. "
+                                          "The folder keeps its IN-PROGRESS.txt."])
+        self.assertTrue((kept / "IN-PROGRESS.txt").is_file())
+        self.assertTrue(check.measured)
+        self.assertEqual(check.result(), "NOT UNCHANGED: 1 finding(s)")
+
+    def test_what_cant_be_checked_stops_it_and_says_why(self):
+        def changed(name: str, change):
+            """Runs `change` on a file of the checkout's text, and gives what puts it back."""
+            path = self.repo / name
+            text = path.read_text()
+            path.write_text(change(text))
+            return lambda: path.write_text(text)
+
+        baseline = lambda change: changed("data/baseline.json", lambda text: json.dumps(change(json.loads(text))))
+
+        def with_presses(data: dict) -> dict:
+            data["runs"][self.REPLAY]["press"] = "start@300"
+            return data
+
+        def with_a_long_name(data: dict) -> dict:
+            data["runs"]["no input"] = data["runs"].pop("no_input")
+            return data
+
+        empty = self.folder / "empty"
+        empty.mkdir()
+        for why, args, change in (
+                ("isn't a folder: give the shared folder's captures/", None, None),
+                (f"--before {empty} holds no gate capture (no *.hash file)", ["--before", str(empty)], None),
+                ("--jobs 0: at least one thing runs at a time", ["--jobs", "0"], None),
+                (f"--disc {empty / 'none'}: not a folder", ["--disc", str(empty / "none")], None),
+                ("data/dream-recomp.pin must hold a full 40-digit hash, not '6154c9a'", [],
+                 lambda: changed("data/dream-recomp.pin", lambda text: "6154c9a\n")),
+                (f"{self.REPLAY} plays a recording back, which the gate does on a new memory card and with no presses", [],
+                 lambda: baseline(with_presses)),
+                ("the run 'no input' names its files", [], lambda: baseline(with_a_long_name)),
+                ("data/baseline.json isn't a baseline", [], lambda: changed("data/baseline.json", lambda text: "{}")),
+                ("scripts/30_compare_runs.py and this script disagree on what describes a baseline run: note", [],
+                 lambda: changed("scripts/30_compare_runs.py", lambda text: text.replace('"recorded_on"}', '"recorded_on", "note"}'))),
+                ("games/jgr/jgr.toml doesn't name a disc image and a boot file", [],
+                 lambda: changed("games/jgr/jgr.toml", lambda text: text.replace('image = "disc.gdi"', ""))),
+        ):
+            with self.subTest(why):
+                restore = change() if change else None
+                if args is None:  # CAPTURES itself
+                    result = subprocess.run([sys.executable, str(self.repo / "scripts/31_pin_check.py"), str(empty / "none"),
+                                             "--disc", str(self.disc)], capture_output=True, text=True, env=self.env)
+                else:
+                    result = self.check(*args)
+                if restore:
+                    restore()
+                self.assert_nothing_ran(result, why)
+        # No disc folder given at all.
+        result = subprocess.run([sys.executable, str(self.repo / "scripts/31_pin_check.py"), str(self.captures)],
+                                capture_output=True, text=True, env=self.env)
+        self.assert_nothing_ran(result, "no disc folder: give --disc FOLDER or set JGR_DISC_DIR")
+        # A capture folder inside the checkout would itself change the working tree the manifest records.
+        (self.repo / "docs/captures").mkdir()
+        result = subprocess.run([sys.executable, str(self.repo / "scripts/31_pin_check.py"), str(self.repo / "docs/captures"),
+                                 "--disc", str(self.disc)], capture_output=True, text=True, env=self.env)
+        self.assert_nothing_ran(result, f"{self.repo / 'docs/captures'} is inside this checkout")
+        self.assertEqual(list((self.repo / "docs/captures").iterdir()), [])
+        # A working tree git can't read: what was built from couldn't be recorded.
+        index = (self.repo / ".git/index").read_bytes()
+        (self.repo / ".git/index").write_bytes(b"not an index")
+        self.assert_nothing_ran(self.check(), "git can't say what this checkout's working tree holds (git status failed)")
+        (self.repo / ".git/index").write_bytes(index)
+        # Another check holds this checkout's build: its lock is a file there.
+        (self.repo / "build").mkdir()
+        with open(self.repo / "build/pin-check.lock", "a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            self.assert_nothing_ran(self.check(), "another pin check, or a run that one left behind, is using this checkout's build")
+        # A copy of the scripts that is no checkout has no commit to name the folder by.
+        shutil.rmtree(self.repo / ".git")
+        self.assert_nothing_ran(self.check(), "isn't a git checkout with a commit")
+
+    def test_ended_from_outside_it_stops_what_it_started_and_says_so_in_the_folder(self):
+        self.behave(no_input=[{"sleep": 300}], attract=[{"sleep": 300}])
+
+        def gone(pid: int) -> bool:
+            try:
+                return pathlib.Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0] == "Z"
+            except OSError:
+                return True
+
+        def free(lock) -> bool:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                return False
+            return True
+
+        def end_what_is_left():
+            """Only when this test fails is anything left: the stand-in programs it started, by their own path."""
+            for call in self.calls():
+                with contextlib.suppress(OSError):
+                    if str(self.repo).encode() in pathlib.Path(f"/proc/{call['pid']}/cmdline").read_bytes():
+                        os.kill(call["pid"], signal.SIGKILL)
+
+        self.addCleanup(end_what_is_left)
+        # However it is ended: by a harness (SIGTERM), by a shell that closed (SIGHUP), or by hand (SIGINT).
+        for number in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT):
+            with self.subTest(number.name):
+                made = len(self.calls())
+                check = subprocess.Popen([sys.executable, str(self.repo / "scripts/31_pin_check.py"), str(self.captures), "--disc",
+                                          str(self.disc), "--jobs", "2", "--label", number.name],
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.env)
+                self.addCleanup(check.kill)
+                waited = 0.0
+                while len(self.calls()) < made + 2:  # both are running: a run, and the gate's first scenario
+                    self.assertIsNone(check.poll(), "it ended before it was stopped")
+                    self.assertLess(waited, 60, "the stand-in program was never started")
+                    time.sleep(0.05)
+                    waited += 0.05
+                check.send_signal(number)
+                out, err = check.communicate(timeout=60)
+                self.assertEqual(check.returncode, 128 + number, out + err)
+                self.assertIn(f"31_pin_check.py: ended from outside ({number.name}): stopping what it started", err)
+                for call in self.calls():  # no program is left running, the one the gate started included
+                    self.eventually(lambda: gone(call["pid"]), f"still running: {call}")
+                dest = self.captures / f"{self.name}-{number.name}"
+                self.assertEqual(self.files(dest), ["IN-PROGRESS.txt"])
+                marker = (dest / "IN-PROGRESS.txt").read_text()
+                self.assertIn(f"for commit {self.commit[:7]} at pin {self.pin[:7]}", marker)
+                self.assertRegex(marker, r"It was cut short at \d\d:\d\d UTC\.\n\Z")
+                self.assertEqual(list((self.folder / "tmp").iterdir()), [])
+                with open(self.repo / "build/pin-check.lock", "a") as lock:  # and the build is free again
+                    self.eventually(lambda: free(lock), "the lock is still held")
+
+    def test_an_error_of_its_own_is_never_taken_for_a_result(self):
+        # Made up: the compare script's reading of a report fails in a way nothing here expects.
+        compare = self.repo / "scripts/30_compare_runs.py"
+        compare.write_text(compare.read_text() + "\n\ndef read_report(text):\n    raise RuntimeError('made up')\n")
+        result = self.check("--jobs", "2")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("RuntimeError: made up", result.stderr)
+        self.assertEqual(result.stderr.splitlines()[-1],
+                         "31_pin_check.py: stopped by an error of its own, above. Nothing it printed is a result.")
+        self.assertNotIn("UNCHANGED", result.stdout)
+        self.assertNotIn("RUNS MATCH", result.stdout)
+        dest = self.captures / self.name
+        self.assertEqual(self.files(dest), ["IN-PROGRESS.txt"])
+        self.assertRegex((dest / "IN-PROGRESS.txt").read_text(), r"It was cut short at \d\d:\d\d UTC\.\n\Z")
+        self.assertEqual(list((self.folder / "tmp").iterdir()), [])  # the cards are gone, and nothing whole was left to keep
+
+    def test_a_command_is_stopped_at_its_time_limit_with_what_it_started(self):
+        pin_check = load("31_pin_check")
+        beat = self.folder / "beat"
+        # A command that starts another, which doesn't end when asked: both write, and neither ends on its own.
+        command = ["sh", "-c", f'(trap "" TERM; while :; do date +%N >> "{beat}"; sleep 0.02; done) & '
+                               f'while :; do date +%N >> "{beat}"; sleep 0.02; done']
+        step = pin_check.Step("a run", command, self.folder / "log.txt", 0.5)
+        began = time.monotonic()
+        with contextlib.redirect_stdout(io.StringIO()) as said:
+            step.run(())
+        self.assertLess(time.monotonic() - began, pin_check.GRACE_SECONDS)
+        self.assertIsNone(step.status)
+        self.assertEqual(step.how(), "stopped, because it hadn't ended after 0 s")
+        self.assertIn("a run ended: stopped, because it hadn't ended after 0 s", said.getvalue())
+        time.sleep(0.3)  # a write that was under way when its process was killed has landed
+        size = beat.stat().st_size
+        self.assertTrue(size)
+        time.sleep(0.3)
+        self.assertEqual(beat.stat().st_size, size, "something it started is still running")
+        # A command that ends in time gives its exit status, and what it printed is in its log.
+        step = pin_check.Step("a run", ["sh", "-c", "echo printed; exit 3"], self.folder / "log.txt", 30)
+        with contextlib.redirect_stdout(io.StringIO()):
+            step.run(())
+        self.assertEqual((step.status, step.how(), step.printed()), (3, "exit 3", ["printed"]))
+        # Each thing that runs the game or reaches the network has its limit: the build 90 minutes,
+        # and a run or the gate's capture 6 host seconds for each guest second, the gate's own two
+        # scenarios of 40 s counted with its recording.
+        plan = pin_check.Plan("c" * 40, "d" * 40, "ccccccc-ddddddd", self.captures / "none", self.disc, self.gdi, self.boot, None, 1, 1, self.RUNS, [])
+        check = pin_check.Check(plan, self.folder / "out", self.folder / "cards", ())
+        self.assertEqual([step.timeout for step in (check.build_step(), check.gate_step(), check.run_step("no_input", 1),
+                                                    check.run_step(self.REPLAY, 2))], [5400, (80 + 1325) * 6, 3600, 7950])
+
+    def test_a_check_that_is_killed_leaves_what_it_started_holding_the_build(self):
+        """Killed, it can stop nothing. What it started goes on in the build folder, so the lock goes
+        on with it, and no second check builds over a run that is still going."""
+        self.behave(no_input=[{"sleep": 300}], attract=[{"sleep": 300}])
+        check = subprocess.Popen([sys.executable, str(self.repo / "scripts/31_pin_check.py"), str(self.captures), "--disc",
+                                  str(self.disc), "--jobs", "2"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=self.env)
+        self.addCleanup(check.kill)
+        waited = 0.0
+        while not (self.calls("no_input") and self.calls("attract")):
+            self.assertIsNone(check.poll(), "it ended before it was killed")
+            self.assertLess(waited, 60, "the stand-in program was never started")
+            time.sleep(0.05)
+            waited += 0.05
+        left = [call["pid"] for call in self.calls()]
+
+        def end_what_was_left():
+            """The programs, then the gate that started one of them: all gone once the lock is free."""
+            for pid in left:
+                with contextlib.suppress(ProcessLookupError):
+                    os.kill(pid, signal.SIGKILL)
+            with open(self.repo / "build/pin-check.lock", "a") as lock:
+                for _ in range(200):
+                    with contextlib.suppress(BlockingIOError):
+                        return fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    time.sleep(0.05)
+
+        self.addCleanup(end_what_was_left)
+        check.kill()
+        check.wait()
+        result = self.check("--label", "second")
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn("another pin check, or a run that one left behind, is using this checkout's build (build/pin-check.lock is held)",
+                      result.stderr)
+        self.assertEqual(len(self.calls()), len(left))
 
 
 # The project's licence (README.md, "Licence"), named at the top of every file that holds code or

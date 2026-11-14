@@ -181,6 +181,23 @@ didn't stop at its time limit, or a speed more than 15% under the baseline's. `-
 needs, and `--speed none` leaves speed out when the runs shared the machine with other work, which the
 report then says. Its table goes in the report. What a difference means is still explained by hand.
 
+`python3 scripts/31_pin_check.py CAPTURES --disc FOLDER --before FOLDER` makes a pin move's whole
+measurement on Linux in one command. It checks the disc and that `games/jgr/disc.gdi` is that disc's
+image, builds, captures the gate with each recording of the baseline as a replay, makes the baseline's
+runs, compares the gate with `--before` (a capture folder's `gate/`) and the runs with
+`30_compare_runs.py --all`, and writes `CAPTURES/<commit>-<pin>/`: its `MANIFEST.txt`, `gate/`, `runs/`
+and `evidence/`. The play-through is made once, by the gate, and its report is the gate's. The gate and
+the runs go half as many at a time as the machine has CPUs (`--jobs N`), and a run more than 15% under
+its baseline speed while it shared the machine is made again alone. It prints `UNCHANGED`,
+`RUNS MATCH, GATE NOT COMPARED` (no `--before`) or `NOT UNCHANGED` with each finding, and exits 1 on
+the last. It never writes over a capture folder (`--label NAME` names another), and what the build, the
+gate and the program print stays in the sandbox. It measures and judges nothing: a changed hash or
+count is still explained by hand. After the build it needs about 25 minutes on a sandbox with 4 CPUs,
+by the baseline's speeds, so it goes in the background with its output in a log, as a build does. It
+was written and tested with stand-ins for the build, the program and the disc, because no sandbox had
+the disc then: the first pin move that uses it makes the steps above by hand as well, and holds the two
+against each other.
+
 `data/baseline.json` changes only with my approval.
 
 ## Delivery
