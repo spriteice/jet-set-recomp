@@ -21,8 +21,9 @@ approval, asked for on a card. A pre-approved thread doesn't wait (`docs/project
 4. For a fix: the root cause and the model behind it, and its regression test. For a feature: where
    it lives, and why that's the right place.
 5. For any added or edited document: the whole document, not only its diff. If the commit changes
-   where the work stands, `docs/status.md` says so. On a rebase conflict in `status.md`, keep both
-   sides: it's shared by every thread.
+   where the work stands, `docs/status.md` says so, and `docs/history.md` gets what was done. On a
+   rebase conflict in `history.md`, keep both sides, and in `status.md` keep what is true now: every
+   thread shares them.
 6. The checks for the commit's exact tree (`docs/build-and-test-reference.md`, "Before a commit").
 
 ## Where code goes

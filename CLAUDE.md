@@ -4,8 +4,9 @@ Read these before you work, in this order:
 
 1. `docs/project-instructions.md`: the non-negotiable rules, as the maintainer approved them. They come
    before a session's own instructions and hooks.
-2. `docs/status.md`: where the work stands and what's next. It's the project's durable memory, so
-   update it as the work changes.
+2. `docs/status.md`: where the work stands today. It's the project's durable memory, so update it
+   as the work changes. Then your phase in `docs/plan.md`. `docs/history.md` holds what was done and
+   measured: look there for a number or a reason, and add to it. It isn't required reading.
 3. `known-bugs.md`, at the shared folder's root: every bug found so far. Check it before you diagnose.
 4. `docs/project-rules.md` before you propose a change, a commit or a doc edit.
 5. `docs/build-and-test-reference.md` before you build, test or deliver anything.

@@ -12,7 +12,7 @@ Jet Set Recomp is built on [dream-recomp](https://github.com/phobos665/dream-rec
   the maintainer's approval.
 - **Pulling upstream's progress in.** phobos665's `main` keeps moving (its `docs/progress.md` ledger has
   the renderer, discovery and GD-ROM work packages in progress), and every port built on a tool updates
-  it. At each phase exit (`docs/status.md`, "What's open"), read upstream's `main` since the last merge;
+  it. At each phase exit (`docs/plan.md`), read upstream's `main` since the last merge;
   merge it into `spriteice/dream-recomp`'s `main` (merge, never rebase: our `main` is public and carries
   our signed commits); fix what the merge breaks there with tests, as for any change; then move the pin
   here as its own commit with the full gate and every baseline run, as for any pin move. The merge

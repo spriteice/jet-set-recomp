@@ -16,7 +16,7 @@ guest-second runs reach 35,977 frames each with 0 traps, 0 unmapped accesses and
 to the interpreter, and so does a recorded play-through of the tutorial and the first mission.
 Shadows aren't drawn and a few textures are wrong. On SteamOS, start the game from Steam, in
 Desktop Mode too: Steam gives the controller only to games it starts.
-[docs/status.md](docs/status.md) has the current state and what's next.
+[docs/status.md](docs/status.md) has the current state, and [docs/plan.md](docs/plan.md) what's next.
 
 ## Supported disc
 

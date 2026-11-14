@@ -16,7 +16,7 @@ adds the map. Code here is functional first, then robust, then performant
 | `packaging/` | What goes in a delivery folder beside the program |
 | `tests/` | Tests of the scripts, with made-up data and no disc |
 | `third_party/dream-recomp/` | Fetched by script, ignored by git, and read-only here |
-| `docs/` | The rules, the build reference, the status and the reports |
+| `docs/` | The rules, the build reference, the status, the plan, the history and the reports |
 
 Ignored and made on the machine: `games/jgr/disc.gdi`, `games/jgr/boot/`, `build*/`.
 
